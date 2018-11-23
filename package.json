@@ -1,0 +1,21 @@
+{
+  "name": "blackjack-sim",
+  "version": "1.0.0",
+  "description": "Black Jack Simulations",
+  "main": "app.js",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "Frank Hu",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/cli": "^7.1.5",
+    "@babel/core": "^7.1.6",
+    "@babel/preset-env": "^7.1.6",
+    "@babel/preset-react": "^7.0.0",
+    "electron": "^3.0.10"
+  },
+  "dependencies": {
+    "@babel/polyfill": "^7.0.0"
+  }
+}
