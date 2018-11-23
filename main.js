@@ -1,6 +1,8 @@
 // Basic init
-const electron = require('electron')
-const {app, BrowserWindow} = electron
+// const electron = require('electron')
+// const {app, BrowserWindow} = electron
+
+import {app, BrowserWindow} from 'electron'
 
 // Let electron reloads by itself when webpack watches changes in ./app/
 require('electron-reload')(__dirname)

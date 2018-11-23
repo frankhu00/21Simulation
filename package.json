@@ -2,7 +2,7 @@
   "name": "blackjack-sim",
   "version": "1.0.0",
   "description": "Black Jack Simulations",
-  "main": "main.js",
+  "main": "root.js",
   "scripts": {
     "serve": "electron .",
     "build": "webpack --mode development",
@@ -31,6 +31,7 @@
     "@babel/plugin-syntax-import-meta": "^7.0.0",
     "@babel/preset-env": "^7.1.6",
     "@babel/preset-react": "^7.0.0",
+    "@babel/register": "^7.0.0",
     "babel-loader": "^8.0.4",
     "css-loader": "^1.0.1",
     "electron": "^3.0.10",
