@@ -86,15 +86,15 @@
 /************************************************************************/
 /******/ ({
 
-/***/ "./app/src/app.js":
-/*!************************!*\
-  !*** ./app/src/app.js ***!
-  \************************/
+/***/ "./app/src/app.tsx":
+/*!*************************!*\
+  !*** ./app/src/app.tsx ***!
+  \*************************/
 /*! no exports provided */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-eval("__webpack_require__.r(__webpack_exports__);\n/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ \"./node_modules/react/index.js\");\n/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);\n/* harmony import */ var react_dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react-dom */ \"./node_modules/react-dom/index.js\");\n/* harmony import */ var react_dom__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_1__);\n/* harmony import */ var _components_App_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./components/App.jsx */ \"./app/src/components/App.jsx\");\n/* harmony import */ var _css_global_css__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./css/global.css */ \"./app/src/css/global.css\");\n/* harmony import */ var _css_global_css__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_css_global_css__WEBPACK_IMPORTED_MODULE_3__);\n\n\n\n\nObject(react_dom__WEBPACK_IMPORTED_MODULE_1__[\"render\"])(react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_components_App_jsx__WEBPACK_IMPORTED_MODULE_2__[\"default\"], null), document.getElementById('app'));\n\n//# sourceURL=webpack:///./app/src/app.js?");
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ \"./node_modules/react/index.js\");\n/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);\n/* harmony import */ var react_dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react-dom */ \"./node_modules/react-dom/index.js\");\n/* harmony import */ var react_dom__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_1__);\n/* harmony import */ var _components_App_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./components/App.jsx */ \"./app/src/components/App.jsx\");\n/* harmony import */ var _css_global_css__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./css/global.css */ \"./app/src/css/global.css\");\n/* harmony import */ var _css_global_css__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_css_global_css__WEBPACK_IMPORTED_MODULE_3__);\n\n\n\n\nObject(react_dom__WEBPACK_IMPORTED_MODULE_1__[\"render\"])(react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_components_App_jsx__WEBPACK_IMPORTED_MODULE_2__[\"default\"], null), document.getElementById('app'));\n\n//# sourceURL=webpack:///./app/src/app.tsx?");
 
 /***/ }),
 
@@ -3402,13 +3402,13 @@ eval("module.exports = function(originalModule) {\n\tif (!originalModule.webpack
 /***/ }),
 
 /***/ 0:
-/*!**********************************************!*\
-  !*** multi @babel/polyfill ./app/src/app.js ***!
-  \**********************************************/
+/*!***********************************************!*\
+  !*** multi @babel/polyfill ./app/src/app.tsx ***!
+  \***********************************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-eval("__webpack_require__(/*! @babel/polyfill */\"./node_modules/@babel/polyfill/lib/index.js\");\nmodule.exports = __webpack_require__(/*! ./app/src/app.js */\"./app/src/app.js\");\n\n\n//# sourceURL=webpack:///multi_@babel/polyfill_./app/src/app.js?");
+eval("__webpack_require__(/*! @babel/polyfill */\"./node_modules/@babel/polyfill/lib/index.js\");\nmodule.exports = __webpack_require__(/*! ./app/src/app.tsx */\"./app/src/app.tsx\");\n\n\n//# sourceURL=webpack:///multi_@babel/polyfill_./app/src/app.tsx?");
 
 /***/ })
 
