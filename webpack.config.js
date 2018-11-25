@@ -42,7 +42,7 @@ var config = {
         })
     ],
     resolve: {
-        extensions: ['.js', '.jsx', '.ts']
+        extensions: ['.js', '.jsx', '.ts', '.tsx']
     }
 };
 

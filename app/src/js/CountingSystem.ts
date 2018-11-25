@@ -216,5 +216,5 @@ class CountingSystemManager {
 
 const CSManager = new CountingSystemManager(new HiLo())
 
-export { HiLo, WongHalves, OmegaII, CountingSystemManager }
+export { HiLo, WongHalves, OmegaII, CountingSystem, CountingSystemManager }
 export default CSManager

@@ -1,5 +1,10 @@
 class NotificationSystem {
 
+    warn(msg: string) {
+        console.warn(msg)
+        return
+    }
+
     error(msg: string) {
         console.error(msg)
         return
