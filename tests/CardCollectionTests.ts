@@ -1,4 +1,5 @@
 import { Shoe, Deck } from '../app/src/js/CardCollections';
+import { randomizeBetween } from '../app/src/js/Utility';
 import { expect } from 'chai';
 import 'mocha';
 
@@ -11,8 +12,6 @@ interface ShoeTestsInterface {
     cardIDList: string[];
     decks: number;
 }
-
-const partialCardAmount = 39
 
 describe('Deck Generate Whole Deck / GenerateCardList No Repeated Cards Test', () => {
 
@@ -50,7 +49,7 @@ describe('Deck Generate Whole Deck / GenerateCardList No Repeated Cards Test', (
         let deckTests: string[][] = []
         let results: boolean[] = []
         for (let i = 0; i < 10; i++) {
-            let deckObj = new Deck({cards: partialCardAmount})
+            let deckObj = new Deck({cards: 39})
             deckTests.push(deckObj.get().map(c => `${c.getSuit()}-${c.getKey()}`))
         };
 
@@ -97,14 +96,17 @@ describe('Deck Generate Proper Number of Cards Test', () => {
 
     it('Proper Amount of Card (Partial Deck)', () => { //lol lazy to refactor it
         let deckTests: string[][] = []
+        let leRandom: number[] = []
         for (let i = 0; i < 2; i++) {
-            let deckObj = new Deck({ cards: partialCardAmount})
+            let randomCardAmount = randomizeBetween(1, 51);
+            leRandom.push(randomCardAmount)
+            let deckObj = new Deck({ cards: randomCardAmount})
             deckTests.push(deckObj.get().map(c => `${c.getSuit()}-${c.getKey()}`))
         };
 
-        deckTests.forEach( (deck) => {
+        deckTests.forEach( (deck, ind) => {
             let actualTotalCards = deck.length
-            let shouldHaveCards = partialCardAmount
+            let shouldHaveCards = leRandom[ind]
 
             expect(actualTotalCards).to.equal(shouldHaveCards)
         });
@@ -159,7 +161,7 @@ describe('Shoe Generate Whole Shoe (various # decks) / GenerateCardList No Repea
         let shoeTests: ShoeTestsInterface[] = []
         let results: boolean[] = []
         for (let i = 1; i <= 11; i++) {
-            let shoeObj = new Shoe({ cards: partialCardAmount*(i+1), deck: i+1 })
+            let shoeObj = new Shoe({ cards: 39*(i+1), deck: i+1 })
             shoeTests.push({
                 cardIDList: shoeObj.get().map(c => `${c.getSuit()}-${c.getKey()}`),
                 decks: i+1
@@ -225,17 +227,20 @@ describe('Shoe Generate Proper Number of Cards Test', () => {
     it('Proper Amount of Cards (Partial Shoe - 2 to 12 decks)', () => {
         
         let shoeTests: ShoeTestsInterface[] = []
+        let leRandom: number[] = []
         for (let i = 1; i <= 11; i++) {
-            let shoeObj = new Shoe({ cards: partialCardAmount*(i+1), deck: i+1 })
+            let randomCardAmount = randomizeBetween(1, 52);
+            leRandom.push(randomCardAmount)
+            let shoeObj = new Shoe({ cards: randomCardAmount*(i+1)-1, deck: i+1 })
             shoeTests.push({
                 cardIDList: shoeObj.get().map(c => `${c.getSuit()}-${c.getKey()}`),
                 decks: i+1
             })
         };
 
-        shoeTests.forEach( (shoe) => {
+        shoeTests.forEach( (shoe, ind) => {
             let actualTotalCards = shoe.cardIDList.length
-            let shouldHaveCards = shoe.decks * partialCardAmount
+            let shouldHaveCards = (shoe.decks * leRandom[ind]) -1
             if (actualTotalCards != shouldHaveCards) {
                 console.log(shoe)
             }

@@ -4,11 +4,9 @@ import styled from 'styled-components'
 
 import Card, { SuitType } from '../js/Card'
 import { Shoe, Deck } from '../js/CardCollections'
-import CSManager, { HiLo, WongHalves, OmegaII } from '../js/CountingSystem'
+import CSManager, { HiLo, WongHalves, OmegaII, CountingSystemManager } from '../js/CountingSystem'
 
 import { CardView, CardListView } from './pages/main/index'
-
-window.CSManager = CSManager;
 
 const AppContainer = styled.div`
     display: flex;
@@ -18,10 +16,19 @@ const AppContainer = styled.div`
     padding: 20px;
 `
 
+declare global {
+    interface Window {
+        CSManager: CountingSystemManager
+    }
+}
+
+window.CSManager = CSManager
+
 
 class App extends Component {
-    constructor(props) {
-        super(props)
+
+    componentDidMount() {
+        CSManager.add([new HiLo(), new OmegaII(), new WongHalves()])
     }
 
     render() {

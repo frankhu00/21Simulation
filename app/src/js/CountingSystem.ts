@@ -1,12 +1,27 @@
 import Card from "./card";
 import Notifier from "./Notifier";
 
-abstract class CountingSystem {
+export interface CountingSystemInterface {
+    tc: number;
+    rc: number; //running count
+    name: string;
+    rules: Array<CountingRule>;
+    endCount: number; //end count for counting down one deck (balanced system = 0)
+
+    getName: () => string;
+    getRules: () => Array<CountingRule>;
+    getTC: () => number;
+    getRC: () => number;
+    processCardCount: (card: Card) => number;
+}
+
+class CountingSystem implements CountingSystemInterface {
+    
     public tc: number = 0;
-    public rc: number = 0; //running count
-    abstract name: string;
-    abstract rules: Array<CountingRule>;
-    abstract endCount: number; //end count for counting down one deck (balanced system = 0)
+    public rc: number = 0;
+    public name: string = '';
+    public rules: Array<CountingRule> = [];
+    public endCount: number = 0;
 
     getName = () => {
         return this.name
@@ -41,7 +56,7 @@ abstract class CountingSystem {
     }
 }
 
-interface CountingRuleInterface {
+export interface CountingRuleInterface {
     cards: Array<Card>;
     value: number;
     hasCard(card: Card) : boolean;
@@ -62,9 +77,6 @@ class CountingRule implements CountingRuleInterface {
 }
 
 class HiLo extends CountingSystem {
-    public endCount: number
-    public name: string
-    public rules: Array<CountingRule>
 
     constructor() {
         super();
@@ -95,9 +107,6 @@ class HiLo extends CountingSystem {
 }
 
 class WongHalves extends CountingSystem {
-    public endCount: number
-    public name: string
-    public rules: Array<CountingRule>
 
     constructor() {
         super();
@@ -134,9 +143,6 @@ class WongHalves extends CountingSystem {
 }
 
 class OmegaII extends CountingSystem {
-    public endCount: number
-    public name: string
-    public rules: Array<CountingRule>
 
     constructor() {
         super();
@@ -172,14 +178,14 @@ class OmegaII extends CountingSystem {
 
 class CountingSystemManager {
     public systemListName: string[];
-    public systemList: CountingSystem[];
+    public systemList: CountingSystemInterface[];
 
-    constructor(systems: CountingSystem | CountingSystem[]) {
+    constructor(systems: CountingSystemInterface | CountingSystemInterface[]) {
         this.systemList = (Array.isArray(systems)) ? systems : [systems]
         this.systemListName = this.systemList.map( s => s.getName() )
     }
 
-    add(systems: CountingSystem | CountingSystem[]) {
+    add(systems: CountingSystemInterface | CountingSystemInterface[]) {
         let addRequested = (Array.isArray(systems)) ? systems : [systems]
         addRequested = addRequested.filter( a => this.systemListName.indexOf(a.getName()) == -1)
         
@@ -187,9 +193,9 @@ class CountingSystemManager {
         return this
     }
 
-    remove(systems: CountingSystem | CountingSystem[]) {
+    remove(systems: CountingSystemInterface | CountingSystemInterface[]) {
         let removeList = (Array.isArray(systems)) ? systems : [systems]
-        let newSystemList : CountingSystem[] = []
+        let newSystemList : CountingSystemInterface[] = []
         this.systemList.forEach( s => {
             removeList.forEach( (r) => {
                 if (s.getName() != r.getName()) {

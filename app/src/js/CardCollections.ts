@@ -109,19 +109,36 @@ class CardCollections {
 
         
         if (setRC === false) {
-            let completeCardList: Card[] = this.generateDecks(deck)
-            let totalCards = completeCardList.length
-            //Start removing card until only numCards left
-            let removedList = []
-            for (let i = 1; i <= totalCards - numCards; i++) {
-                let randomIndex = randomizeBetween(0, 52*deck-1)
-                while (removedList.indexOf(randomIndex) > -1) {
-                    randomIndex = randomizeBetween(0, 52*deck-1)
+            //Determine which logic to use for performance
+            if ( numCards/(52*deck) >= 0.6 ) {
+                //Faster to remove the cards
+                // console.log('Create cards by creating complete deck then removing random cards')
+                let completeCardList: Card[] = this.generateDecks(deck)
+                let totalCards = completeCardList.length
+                //Start removing card until only numCards left
+                let removedList = []
+                for (let i = 1; i <= totalCards - numCards; i++) {
+                    let randomIndex = randomizeBetween(0, 52*deck-1)
+                    while (removedList.indexOf(randomIndex) > -1) {
+                        randomIndex = randomizeBetween(0, 52*deck-1)
+                    }
+                    removedList.push(randomIndex)
+                    delete completeCardList[randomIndex]
                 }
-                removedList.push(randomIndex)
-                delete completeCardList[randomIndex]
+                cardList = completeCardList.filter(val => val)
+            } else {
+                //Faster to generate the cards
+                // console.log('Create cards by creating random cards')
+                let createdCards:number[] = []
+                for (let i = 1; i <= numCards; i++) {
+                    let represenationValue = randomizeBetween(1, 52*deck)
+                    while (createdCards.indexOf(represenationValue) > -1) {
+                        represenationValue = randomizeBetween(1, 52*deck)
+                    }
+                    createdCards.push(represenationValue)
+                }
+                cardList = createdCards.map( presentationVal => this.createCard(presentationVal, deck))
             }
-            cardList = completeCardList.filter(val => val)
 
         } else {
             //NOT AVAILABLE ATM
@@ -129,6 +146,7 @@ class CardCollections {
             cardList = this.generateDecks()
             //NOT AVAILABLE ATM
         }
+
         return cardList
     }
 

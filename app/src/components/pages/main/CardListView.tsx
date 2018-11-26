@@ -15,7 +15,7 @@ interface CardListViewProps {
     cards: Card[];
 }
 
-export default class CardListView extends Component<CardListViewProps, null> {
+export default class CardListView extends Component<CardListViewProps> {
     render() {
         let { cards } = this.props
         return (
