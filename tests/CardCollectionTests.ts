@@ -2,6 +2,7 @@ import { Shoe, Deck } from '../app/src/js/CardCollections';
 import { randomizeBetween } from '../app/src/js/Utility';
 import { expect } from 'chai';
 import 'mocha';
+import Card, { SuitType } from '../app/src/js/Card';
 
 interface ShoeRepeatInterface {
     id: string;
@@ -49,7 +50,8 @@ describe('Deck Generate Whole Deck / GenerateCardList No Repeated Cards Test', (
         let deckTests: string[][] = []
         let results: boolean[] = []
         for (let i = 0; i < 10; i++) {
-            let deckObj = new Deck({cards: 39})
+            let randomAmt = randomizeBetween(1, 51)
+            let deckObj = new Deck({cards: randomAmt})
             deckTests.push(deckObj.get().map(c => `${c.getSuit()}-${c.getKey()}`))
         };
 
@@ -161,7 +163,8 @@ describe('Shoe Generate Whole Shoe (various # decks) / GenerateCardList No Repea
         let shoeTests: ShoeTestsInterface[] = []
         let results: boolean[] = []
         for (let i = 1; i <= 11; i++) {
-            let shoeObj = new Shoe({ cards: 39*(i+1), deck: i+1 })
+            let randomAmt = randomizeBetween(2, 52)
+            let shoeObj = new Shoe({ cards: randomAmt*(i+1)-1, deck: i+1 })
             shoeTests.push({
                 cardIDList: shoeObj.get().map(c => `${c.getSuit()}-${c.getKey()}`),
                 decks: i+1
@@ -229,7 +232,7 @@ describe('Shoe Generate Proper Number of Cards Test', () => {
         let shoeTests: ShoeTestsInterface[] = []
         let leRandom: number[] = []
         for (let i = 1; i <= 11; i++) {
-            let randomCardAmount = randomizeBetween(1, 52);
+            let randomCardAmount = randomizeBetween(2, 52);
             leRandom.push(randomCardAmount)
             let shoeObj = new Shoe({ cards: randomCardAmount*(i+1)-1, deck: i+1 })
             shoeTests.push({
@@ -250,3 +253,41 @@ describe('Shoe Generate Proper Number of Cards Test', () => {
     });
 
 });
+
+let DefinedCardOrder = [
+    new Card('K', SuitType.Spades),
+    new Card('Q', SuitType.Spades),
+    new Card('J', SuitType.Spades),
+    new Card('10', SuitType.Spades),
+    new Card('9', SuitType.Spades),
+    new Card('8', SuitType.Spades),
+    new Card('7', SuitType.Spades),
+    new Card('6', SuitType.Spades),
+    new Card('5', SuitType.Spades),
+    new Card('4', SuitType.Spades),
+    new Card('3', SuitType.Spades),
+    new Card('2', SuitType.Spades),
+    new Card('A', SuitType.Spades),
+    new Card('K', SuitType.Hearts),
+    new Card('Q', SuitType.Hearts),
+    new Card('J', SuitType.Hearts),
+    new Card('10', SuitType.Hearts),
+    new Card('9', SuitType.Hearts),
+    new Card('8', SuitType.Hearts),
+    new Card('7', SuitType.Hearts),
+    new Card('6', SuitType.Hearts),
+    new Card('5', SuitType.Hearts),
+    new Card('4', SuitType.Hearts),
+    new Card('3', SuitType.Hearts),
+    new Card('2', SuitType.Hearts),
+    new Card('A', SuitType.Hearts)
+]
+let DeckWithKnownOrder = new Deck({cards: DefinedCardOrder})
+
+describe('Card Collect Class Shuffle', () => {
+
+    it('Can shuffle via RNG Shuffle method', () => {
+        DeckWithKnownOrder.shuffle()
+        expect(DefinedCardOrder).to.not.eql(DeckWithKnownOrder.get());
+    })
+})

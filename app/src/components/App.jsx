@@ -16,14 +16,8 @@ const AppContainer = styled.div`
     padding: 20px;
 `
 
-declare global {
-    interface Window {
-        CSManager: CountingSystemManager
-    }
-}
-
 window.CSManager = CSManager
-
+window.deck = new Deck();
 
 class App extends Component {
 

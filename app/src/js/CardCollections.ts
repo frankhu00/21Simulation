@@ -6,7 +6,7 @@ import { randomizeBetween } from './Utility'
 type RCObjectType = {[key: string]: CountingSystem | number}
 type setRCType = RCObjectType | boolean
 type deckConstructorType = { cards?: Card[] | number, setRC?: setRCType }
-type shoeConstructorType = { deck?: number, cards?: Card[] | number, allowRepeats?: number, setRC?: setRCType }
+type shoeConstructorType = { deck?: number, cards?: Card[] | number, setRC?: setRCType }
 
 const ShuffleType = {
     RNG: 'RNG Shuffle',
@@ -14,14 +14,22 @@ const ShuffleType = {
     Mimic: 'Mimic Shuffle Flow'
 }
 
+interface CardStateLog {
+    action: string
+    state: Card[]
+    changes?: any
+}
+
 class CardCollections {
 
     public cards: Card[] = []
-    public pastCardsState: Array<Card[]> = [] //stores the previous card ordering. index 0 = most recent
-    protected shuffleIteration: number = 2
-    protected doShuffle: (repeat: number) => void
+    public pastCardState: Array<CardStateLog> = [] //stores the previous card ordering. index 0 = most recent
+    
+    private shuffleIteration: number = 2
+    private doShuffle: () => CardCollections
 
-    constructor() {
+    constructor(cards?: Card[]) {
+        this.cards = cards ? cards : []
         this.doShuffle = this.rngShuffle.bind(this, this.shuffleIteration)
     }
 
@@ -29,10 +37,26 @@ class CardCollections {
         return this.cards
     }
 
-    shuffle(repeat: number) {
-        //Save current card ordering before shuffling... might have reference issue
-        this.pastCardsState.push(this.cards)
-        return this.doShuffle(repeat)
+    clone() {
+        return new CardCollections(this.cards)
+    }
+
+    saveCardState(action: string, changes?: any) {
+        let stateLog: CardStateLog = {
+            action,
+            state: this.cards,
+            changes
+        }
+        this.pastCardState.unshift(stateLog)
+    }
+
+    shuffle(repeat?: number) {
+        this.saveCardState('Shuffle')
+        if (repeat) {
+            this.setShuffleIteration(repeat)
+        }
+
+        return this.doShuffle()
     }
 
     setShuffleMethod(shuffle: string, options?: number) {
@@ -54,11 +78,85 @@ class CardCollections {
     setShuffleIteration(iteration: number) {
         iteration = iteration > 0 ? iteration : 2
         this.shuffleIteration = iteration
+        return this
     }
 
     getCardsRemaining(cardList?: Card[]) {
         cardList = cardList ? cardList : this.cards
         return cardList.length
+    }
+
+    getCards(cardList: Card[] | Card, matchSuit: boolean = false) {
+        cardList = (Array.isArray(cardList)) ? cardList : [cardList]
+        let searchList = cardList as Card[]
+        let comparator = matchSuit ? 
+            (card: Card, searchCard: Card) => searchCard.getKey() == card.getKey() && searchCard.getSuit() == card.getSuit()
+            :
+            (card: Card, searchCard: Card) => searchCard.getKey() == card.getKey()
+        let foundCards = this.cards.filter( c => {
+            let found = searchList.filter(s => {
+                return comparator(c, s)
+            });
+            return found.length > 0
+        })
+
+        if (foundCards.length > 0) {
+            return foundCards
+        } else {
+            Notifier.notify('No card found')
+            return false
+        }
+    }
+
+    addCard(card: Card | Card[]) {
+        this.saveCardState('Add Cards', card)
+        this.cards.concat(card)
+        return this
+    }
+
+    //Removes all matched cards
+    removeCards(card: Card | number, matchSuit: boolean = false) {
+        if (typeof card == 'number') {
+            if (typeof this.cards[card] != 'undefined') {
+                this.saveCardState('Remove Cards', [this.cards[card]])
+                let removed = this.cards.splice(card, 1)
+                return removed
+            }
+            else {
+                Notifier.error('Invalid index')
+                return false
+            }
+        }
+        else {
+            let comparator = matchSuit ? 
+                (card: Card, searchCard: Card) => searchCard.getKey() == card.getKey() && searchCard.getSuit() == card.getSuit()
+                :
+                (card: Card, searchCard: Card) => searchCard.getKey() == card.getKey()
+            let removedCards: Card[] = []
+            let newCardList = this.cards.filter( c => {
+                if (comparator(c, card)) {
+                    //this is the card to remove, so return false
+                    removedCards.push(c)
+                    return false
+                } else {
+                    return true
+                }
+            })
+            if (removedCards.length > 0) {
+                this.saveCardState('Remove Cards', removedCards)
+                this.cards = newCardList
+                return removedCards
+            } else {
+                Notifier.notify('Cannot find specified cards to remove')
+                return false
+            }
+        }
+    }
+
+    //Removes first card (deal the first card)
+    //This probably won't have saveCardState since it going to be used as the method to deal cards
+    tossCard() {
+        return this.cards.shift()
     }
 
     createCard(representation: number, deck: number = 1) {
@@ -208,23 +306,29 @@ class Deck extends CardCollections {
         }
     }
 
+    clone() {
+        return new Deck({cards: this.cards})
+    }
+
 }
 
 class Shoe extends CardCollections {
 
-    //use allowRepeats = -1 to turn off restriction completely
-    //                 = 0 to default it to (deck-1) (max repeat possible)
-    //                 = 1 means 1 REPEAT (so it can have two "A of Spades")
-    constructor({ cards, deck = 2, allowRepeats = 0, setRC = false } : shoeConstructorType = {}) {
+    protected deck: number;
+
+    constructor({ cards, deck = 2, setRC = false } : shoeConstructorType = {}) {
         super()
-        deck = deck < 1 ? 2 : deck //default to 2 decks if invalid
-        allowRepeats = allowRepeats === 0 ? deck-1 : allowRepeats 
+        this.deck = deck < 1 ? 2 : deck //default to 2 decks if invalid
         if (cards) {
-            this.cards = Array.isArray(cards) ? cards as Card[] : this.generateCardList(cards as number, deck, setRC)
+            this.cards = Array.isArray(cards) ? cards as Card[] : this.generateCardList(cards as number, this.deck, setRC)
         } else {
             //generate standard shoe with specified decks
-            this.cards = this.generateDecks(deck)
+            this.cards = this.generateDecks(this.deck)
         }
+    }
+
+    clone() {
+        return new Shoe({cards: this.cards, deck: this.deck})
     }
 
 }

@@ -54,6 +54,12 @@ class CountingSystem implements CountingSystemInterface {
         }
         return value
     }
+
+    countCards = (cards: Card[]) => {
+        cards.forEach( (c) => {
+            this.rc += this.processCardCount(c)
+        })
+    }
 }
 
 export interface CountingRuleInterface {
