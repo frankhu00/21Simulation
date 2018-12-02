@@ -3,7 +3,7 @@ import { hot } from 'react-hot-loader'
 import styled from 'styled-components'
 
 import Card, { SuitType } from '../js/Card'
-import { Shoe, Deck } from '../js/CardCollections'
+import { Shoe, Deck } from '../js/CardCollection'
 import CSManager, { HiLo, WongHalves, OmegaII, CountingSystemManager } from '../js/CountingSystem'
 
 import { CardView, CardListView } from './pages/main/index'

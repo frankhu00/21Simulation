@@ -20,13 +20,33 @@ interface CardStateLog {
     changes?: any
 }
 
-class CardCollections {
+export interface CardCollectionInterface {
+    cards: Card[];
+    pastCardState: Array<CardStateLog>;
+    get: () => Card[];
+    clone: () => CardCollectionInterface;
+    count: () => number;
+    saveCardState: (action: string, changes?: any) => void;
+    shuffle: (repeat?: number) => CardCollectionInterface;
+    setShuffleMethod: (shuffle: string, options?: number) => CardCollectionInterface;
+    setShuffleIteration: (iteration: number) => CardCollectionInterface;
+    getCardsRemaining: (cardList?: Card[]) => number;
+    getCards: (cardList: Card[] | Card, matchSuit: boolean) => Card[] | boolean;
+    addCard: (card: Card | Card[]) => CardCollectionInterface;
+    removeCards: (card: Card | number, matchSuit: boolean) => Card[] | boolean;
+    tossCard: () => Card | undefined;
+    createCard: (representation: number, deck: number) => Card;
+    generateDecks: (deck: number) => Card[];
+    generateCardList: (numCards: number, deck: number, setRC: setRCType ) => Card[];
+}
 
-    public cards: Card[] = []
-    public pastCardState: Array<CardStateLog> = [] //stores the previous card ordering. index 0 = most recent
+class CardCollection implements CardCollectionInterface {
+
+    cards: Card[] = []
+    pastCardState: Array<CardStateLog> = [] //stores the previous card ordering. index 0 = most recent
     
     private shuffleIteration: number = 2
-    private doShuffle: () => CardCollections
+    private doShuffle: () => CardCollectionInterface
 
     constructor(cards?: Card[]) {
         this.cards = cards ? cards : []
@@ -38,7 +58,11 @@ class CardCollections {
     }
 
     clone() {
-        return new CardCollections(this.cards)
+        return new CardCollection(this.cards)
+    }
+
+    count() {
+        return this.cards.length
     }
 
     saveCardState(action: string, changes?: any) {
@@ -73,6 +97,7 @@ class CardCollections {
             Notifier.warn(`Unknown shuffling method. Shuffling method set to: ${ShuffleType.RNG} with intensity "default"`)
             this.doShuffle = this.rngShuffle.bind(this, this.shuffleIteration, options)
         }
+        return this
     }
 
     setShuffleIteration(iteration: number) {
@@ -294,7 +319,7 @@ class CardCollections {
     }
 }
 
-class Deck extends CardCollections {
+class Deck extends CardCollection implements CardCollectionInterface {
 
     constructor({ cards, setRC = false } : deckConstructorType = {}) {
         super()
@@ -312,7 +337,7 @@ class Deck extends CardCollections {
 
 }
 
-class Shoe extends CardCollections {
+class Shoe extends CardCollection implements CardCollectionInterface {
 
     protected deck: number;
 
@@ -334,4 +359,4 @@ class Shoe extends CardCollections {
 }
 
 export { Deck, Shoe, ShuffleType }
-export default CardCollections
+export default CardCollection

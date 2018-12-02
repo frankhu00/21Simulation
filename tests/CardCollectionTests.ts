@@ -1,4 +1,4 @@
-import { Shoe, Deck } from '../app/src/js/CardCollections';
+import { Shoe, Deck } from '../app/src/js/CardCollection';
 import { randomizeBetween } from '../app/src/js/Utility';
 import { expect } from 'chai';
 import 'mocha';

@@ -1,5 +1,7 @@
 import Card from "./card";
+import { uniqueFilter } from './Utility';
 import Notifier from "./Notifier";
+import CardCollection, { CardCollectionInterface } from "./CardCollection";
 
 export interface CountingSystemInterface {
     tc: number;
@@ -13,6 +15,7 @@ export interface CountingSystemInterface {
     getTC: () => number;
     getRC: () => number;
     processCardCount: (card: Card) => number;
+    countCards: (cards: Card[] | CardCollectionInterface) => CountingSystemInterface
 }
 
 class CountingSystem implements CountingSystemInterface {
@@ -48,17 +51,25 @@ class CountingSystem implements CountingSystemInterface {
             }
         }
 
-        if (!value) {
+        if (value == null) {
             Notifier.error(`No rules found for this card: ${card.key}. Count of 0 is assumed`);
             value = 0;
         }
         return value
     }
 
-    countCards = (cards: Card[]) => {
+    countCards = (cards: Card[] | CardCollectionInterface) => {
+        this.rc = 0 // reset running count
+        if (!Array.isArray(cards)) {
+            cards = cards as CardCollectionInterface
+            cards = cards.get()
+        }
+
         cards.forEach( (c) => {
             this.rc += this.processCardCount(c)
         })
+
+        return this
     }
 }
 
@@ -183,35 +194,77 @@ class OmegaII extends CountingSystem {
 }
 
 class CountingSystemManager {
-    public systemListName: string[];
-    public systemList: CountingSystemInterface[];
+    public systemListName: string[] = [];
+    public systemList: CountingSystemInterface[] = [];
 
-    constructor(systems: CountingSystemInterface | CountingSystemInterface[]) {
-        this.systemList = (Array.isArray(systems)) ? systems : [systems]
-        this.systemListName = this.systemList.map( s => s.getName() )
+    constructor(systems?: CountingSystemInterface | CountingSystemInterface[]) {
+        this.systemList = systems ? 
+                            (Array.isArray(systems)) ? systems : [systems]
+                            :
+                            []
+        this.updateSystemListName()
     }
 
     add(systems: CountingSystemInterface | CountingSystemInterface[]) {
         let addRequested = (Array.isArray(systems)) ? systems : [systems]
-        addRequested = addRequested.filter( a => this.systemListName.indexOf(a.getName()) == -1)
+        let addRequestdUnique = uniqueFilter(addRequested, (system) => system.getName())
+        addRequestdUnique = addRequestdUnique.filter( a => this.systemListName.indexOf(a.getName()) == -1)
         
-        if (addRequested.length > 0) { this.systemList.push(...addRequested) }
+        if (addRequestdUnique.length > 0) { 
+            this.systemList.push(...addRequestdUnique)
+            this.updateSystemListName()
+        }
         return this
     }
 
-    remove(systems: CountingSystemInterface | CountingSystemInterface[]) {
-        let removeList = (Array.isArray(systems)) ? systems : [systems]
-        let newSystemList : CountingSystemInterface[] = []
-        this.systemList.forEach( s => {
-            removeList.forEach( (r) => {
-                if (s.getName() != r.getName()) {
+    remove(systems: CountingSystemInterface | CountingSystemInterface[] | number) {
+        if (typeof systems == 'number') {
+            if (typeof this.systemList[systems as number] != 'undefined') {
+                this.systemList.splice(systems as number, 1)
+            }
+            else {
+                Notifier.warn('Index to remove does not exist')
+            }
+        } 
+        else {
+            let removeList = (Array.isArray(systems)) ? systems : [systems]
+            let newSystemList : CountingSystemInterface[] = []
+            this.systemList.forEach( s => {
+                let shouldStay: boolean = true
+                removeList.forEach( (r) => {
+                    if (s.getName() == r.getName()) {
+                        shouldStay = false
+                    }
+                })
+                if (shouldStay) {
                     newSystemList.push(s)
                 }
             })
-        })
 
-        this.systemList = newSystemList
+            this.systemList = newSystemList
+        }
+
+        this.updateSystemListName()
         return this
+    }
+
+    removeAll() {
+        this.systemList = []
+        this.updateSystemListName()
+        return this
+    }
+
+
+    updateSystemListName() {
+        this.systemListName = this.systemList.map( s => s.getName() )
+    }
+
+    getSystemNames() {
+        return this.systemListName
+    }
+
+    getSystem() {
+        return this.systemList
     }
 
     getSystemCount() {
@@ -226,7 +279,7 @@ class CountingSystemManager {
     }
 }
 
-const CSManager = new CountingSystemManager(new HiLo())
+const CSManager = new CountingSystemManager()
 
 export { HiLo, WongHalves, OmegaII, CountingSystem, CountingSystemManager }
 export default CSManager
