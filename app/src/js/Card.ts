@@ -1,17 +1,17 @@
-let BJCardValueMap : {[key: string]: number} = {
-    'K': 10,
-    'Q': 10,
-    'J': 10,
-    '10': 10,
-    '9': 9,
-    '8': 8,
-    '7': 7,
-    '6': 6,
-    '5': 5,
-    '4': 4,
-    '3': 3,
-    '2': 2,
-    'A': 11
+let BJCardValueMap : {[key: string]: number[]} = {
+    'K': [10],
+    'Q': [10],
+    'J': [10],
+    '10': [10],
+    '9': [9],
+    '8': [8],
+    '7': [7],
+    '6': [6],
+    '5': [5],
+    '4': [4],
+    '3': [3],
+    '2': [2],
+    'A': [1, 11]
 }
 
 let CardNumberMap : {[key: number]: string} = {
@@ -41,11 +41,11 @@ const SuitType = {
 class Card {
     public suit: string;
     public key: string;
-    public value: number;
+    public value: number[];
 
     constructor(key: string, suit?: string) {
         this.key = key;
-        this.value = BJCardValueMap[key];
+        this.value = BJCardValueMap[key.toUpperCase()];
         this.suit = suit ? suit : SuitType.None
     }
 
