@@ -14,6 +14,7 @@ export interface PlayingHand {
     canSurrender: () => boolean
     computeValue: () => void
     getSecondCard: (card: Card) => PlayingHand
+    getHighestValue: () => number
     firstCard: Card,
     secondCard: Card | undefined,
     handCards: Card[]
@@ -21,6 +22,7 @@ export interface PlayingHand {
     bet: number
     isDealer: boolean
     isBusted: boolean
+    isBlackJack: boolean
     isHandValid: boolean
     // gameRule: PlayRuleOption //hmmm.... NO this should not be here
 }
@@ -34,6 +36,7 @@ class Hand {
     public isHandValid: boolean = false
     public isBusted: boolean = false
     public isDealer: boolean = false
+    public isBlackJack: boolean = false
     public value: number[] = [0]
 
 
@@ -43,7 +46,6 @@ class Hand {
     }
 
     hit(card: Card) {
-        //need isHandValid testW
         if (this.isHandValid && !this.isBusted) {
             this.handCards.push(card)
             this.computeValue()
@@ -63,6 +65,7 @@ class Hand {
         this.resetValue()
         this.computeValue()
 
+        this.isBlackJack = this.handCards.length == 2 && this.value.indexOf(21) > -1
         return this
     }
 
@@ -76,7 +79,7 @@ class Hand {
         let hasSoftValue: boolean = false
         let valueList = this.handCards.map( c => {
             const values = c.getValue()
-            if (this.value.length == 2) {
+            if (values.length == 2) {
                 hasSoftValue = true
             }
             return values
@@ -102,6 +105,22 @@ class Hand {
         }
 
         this.isBusted = this.value.every( v => v > 21)
+    }
+
+    getHighestValue() {
+        if (this.value.length == 1) {
+            return this.value[0] > 21 ? 0 : this.value[0]
+        }
+        else {
+            let validValues = this.value.filter(v => v <= 21)
+            if (validValues.length > 0) {
+                return validValues.reduce((a, b) => {
+                    return (a > b) ? a : b
+                }, 0)
+            } else {
+                return 0
+            }
+        }
     }
 
     resetValue() {

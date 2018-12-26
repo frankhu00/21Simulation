@@ -3,6 +3,7 @@ import { hot } from 'react-hot-loader'
 import styled from 'styled-components'
 
 import Card, { SuitType } from '../js/Card'
+import Hand from '../js/Hand'
 import { Shoe, Deck } from '../js/CardCollection'
 import CSManager, { HiLo, WongHalves, OmegaII, CountingSystemManager } from '../js/CountingSystem'
 
@@ -18,6 +19,8 @@ const AppContainer = styled.div`
 
 window.CSManager = CSManager
 window.deck = new Deck();
+window.hand = Hand;
+window.card = Card;
 
 class App extends Component {
 

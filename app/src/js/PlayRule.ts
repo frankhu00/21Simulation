@@ -36,6 +36,4 @@ export interface PlayRuleOption {
     otherPlayers: number
 }
 
-export {
-    defaultRules
-}
+export default defaultRules

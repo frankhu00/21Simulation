@@ -3,7 +3,7 @@ const ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 var config = {
     target: 'electron-renderer',
-    entry: ['@babel/polyfill', './app/src/app.tsx'],
+    entry: ['@babel/polyfill', './app/src/app.jsx'],
     output: {
         publicPath: 'dist/',
         filename: 'bundle.js',
