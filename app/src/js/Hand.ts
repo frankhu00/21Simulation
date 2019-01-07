@@ -4,7 +4,7 @@ import Notifier from './Notifier';
 export interface PlayingHand {
     hit: (card: Card) => PlayingHand
     stand: () => PlayingHand
-    split: () => void
+    split: () => PlayingHand[];
     doubleDown: () => PlayingHand
     insurance: () => void
     surrender: () => void
@@ -16,7 +16,7 @@ export interface PlayingHand {
     getSecondCard: (card: Card) => PlayingHand
     getHighestValue: () => number
     firstCard: Card,
-    secondCard: Card | undefined,
+    secondCard?: Card,
     handCards: Card[]
     value: number[] //for cases like soft 17
     bet: number
@@ -24,11 +24,9 @@ export interface PlayingHand {
     isBusted: boolean
     isBlackJack: boolean
     isHandValid: boolean
-    // gameRule: PlayRuleOption //hmmm.... NO this should not be here
 }
 
-// class Hand implements PlayingHand {
-class Hand {
+class Hand implements PlayingHand {
 
     public firstCard: Card
     public secondCard?: Card = undefined
@@ -38,6 +36,7 @@ class Hand {
     public isDealer: boolean = false
     public isBlackJack: boolean = false
     public value: number[] = [0]
+    public bet: number = 0
 
 
     constructor(firstCard: Card, isDealer: boolean = false) {
@@ -125,6 +124,43 @@ class Hand {
 
     resetValue() {
         this.value = [0]
+    }
+
+    stand() {
+        return this
+    }
+
+    split() {
+        //need to run check first
+        return [new Hand(this.firstCard), new Hand(this.secondCard as Card)]
+    }
+    
+    doubleDown() {
+        return this
+    }
+    
+    insurance() {
+        
+    }
+    
+    surrender() {
+
+    }
+    
+    canHit() {
+        return true
+    }
+
+    canSplit() {
+        return true
+    }
+
+    canDoubleDown() {
+        return true
+    }
+
+    canSurrender() {
+        return true
     }
 
 }
