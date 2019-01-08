@@ -1,5 +1,6 @@
 import Card from './Card'
 import Notifier from './Notifier';
+import { PlayerType } from './Player';
 
 export interface PlayingHand {
     hit: (card: Card) => PlayingHand
@@ -22,10 +23,12 @@ export interface PlayingHand {
     value: number[] //for cases like soft 17
     bet: number
     isDealer: boolean
+    isControllable: boolean
     isBusted: boolean
     isBlackJack: boolean
     isHandValid: boolean
     isEmptyHand: boolean
+    playerType: PlayerType
 }
 
 class Hand implements PlayingHand {
@@ -36,13 +39,25 @@ class Hand implements PlayingHand {
     public isHandValid: boolean = false
     public isBusted: boolean = false
     public isDealer: boolean = false
+    public isControllable: boolean = false
     public isBlackJack: boolean = false
     public value: number[] = [0]
     public bet: number = 0
     public isEmptyHand: boolean = true
+    public playerType: PlayerType
 
 
-    constructor(firstCard?: Card, isDealer: boolean = false) {
+    constructor(firstCard?: Card, playerType: PlayerType = PlayerType.NPC) {
+        this.playerType = playerType
+        if (playerType == PlayerType.MC) {
+            this.isControllable = true
+            this.isDealer = false
+        }
+        else {
+            this.isControllable = false
+            this.isDealer = (playerType == PlayerType.Dealer)
+        }
+
         if (firstCard) {
             this.firstCard = firstCard
             this.handCards.push(firstCard)

@@ -6,10 +6,16 @@ import Player from './Player'
 
 import Notifier from './Notifier'
 
-class GameController {
+export interface GameControl {
+    readonly rule: PlayRuleOption
+    readonly config: GameConfiguration
+    next: () => void
+}
 
-    private rule: PlayRuleOption = defaultRules
-    private config: GameConfiguration = defaultConfig
+class GameController implements GameControl {
+
+    readonly rule: PlayRuleOption = defaultRules
+    readonly config: GameConfiguration = defaultConfig
     private aiHands: PlayingHand[] = [] //this is variable during a shoe (for other players)
     private playerHands: PlayingHand[] = [] //this is variable during a shoe (for main player)
     private shoeInProgress: boolean = false
@@ -47,10 +53,14 @@ class GameController {
     assignPlayerPosition: () => this = () => {
         let { playerPosition } = this.config
         if (playerPosition) {
-            
+            Notifier.notify('Need to assign player position')
         }
 
         return this
+    }
+
+    next() {
+        Notifier.notify('Delegation method called')
     }
 
     startShoe: () => void = () => {
