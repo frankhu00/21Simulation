@@ -13,9 +13,10 @@ export interface PlayingHand {
     canDoubleDown: () => boolean
     canSurrender: () => boolean
     computeValue: () => void
+    getFirstCard: (card: Card) => PlayingHand
     getSecondCard: (card: Card) => PlayingHand
     getHighestValue: () => number
-    firstCard: Card,
+    firstCard?: Card,
     secondCard?: Card,
     handCards: Card[]
     value: number[] //for cases like soft 17
@@ -24,11 +25,12 @@ export interface PlayingHand {
     isBusted: boolean
     isBlackJack: boolean
     isHandValid: boolean
+    isEmptyHand: boolean
 }
 
 class Hand implements PlayingHand {
 
-    public firstCard: Card
+    public firstCard?: Card = undefined
     public secondCard?: Card = undefined
     public handCards: Card[] = []
     public isHandValid: boolean = false
@@ -37,11 +39,18 @@ class Hand implements PlayingHand {
     public isBlackJack: boolean = false
     public value: number[] = [0]
     public bet: number = 0
+    public isEmptyHand: boolean = true
 
 
-    constructor(firstCard: Card, isDealer: boolean = false) {
-        this.firstCard = firstCard
-        this.handCards.push(firstCard)
+    constructor(firstCard?: Card, isDealer: boolean = false) {
+        if (firstCard) {
+            this.firstCard = firstCard
+            this.handCards.push(firstCard)
+            this.isEmptyHand = false;
+        }
+        else {
+            this.isEmptyHand = true;
+        }
     }
 
     hit(card: Card) {
@@ -51,6 +60,15 @@ class Hand implements PlayingHand {
         } else {
             Notifier.error('Invalid Hand. Cannot hit')
         }
+
+        return this
+    }
+
+    getFirstCard(card: Card) {
+        this.firstCard = card
+        this.handCards.push(card)
+        this.isEmptyHand = false
+        this.isHandValid = false
 
         return this
     }
