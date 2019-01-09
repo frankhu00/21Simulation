@@ -1,5 +1,5 @@
 import Hand, { PlayingHand } from './Hand'
-import GameController, { GameControl } from './GameController'
+import { GameControlDelegator } from './GameController'
 
 import Notifier from './Notifier'
 
@@ -20,21 +20,33 @@ export interface PlayerInterface {
 
     completeCurrentHand: () => void
     next: () => void
-    changeBet: (forHand: number, bet?: number) => void
-    changeHand: (change: number) => void
+    changeBetBy: (forHand: number, change?: number) => void
+    changeBetTo: (forHand: number, bet?: number) => void
+    changeHandBy: (change: number) => PlayerInterface
+    changeHandTo: (setTo: number) => PlayerInterface
     addHand: (change: number) => PlayerInterface
     removeHand: (change: number) => PlayerInterface
+    numOfHands: () => number
+    join: (game: GameControlDelegator) => boolean
+    leave: () => boolean
+    getType: () => PlayerType
+    getGameID: () => string
+    setDelegator: (delegator: GameControlDelegator) => any
+    //Need change position
 }
 
-export default class Player implements PlayerInterface{
+//Should use this as base and extend into Dealer class and Player/NPC class
+//Dealer can't join, always one hand, and the AI is set in stone via game rules
+//Whereas NPC/Player class can always follow a custom rule set later on...
+export default class Player implements PlayerInterface {
     public active: boolean
     public numHands: number
     public currentHand: PlayingHand
     public hands: PlayingHand[]
     private type: PlayerType
-    private delegator?: GameControl
+    private delegator?: GameControlDelegator
 
-    constructor(type: PlayerType = PlayerType.NPC, hands?: PlayingHand[], delegator?: GameControl) {
+    constructor(type: PlayerType = PlayerType.NPC, delegator?: GameControlDelegator, hands?: PlayingHand[]) {
         this.type = type
         if (hands) {
             this.hands = hands
@@ -46,7 +58,11 @@ export default class Player implements PlayerInterface{
         }
         this.currentHand = this.hands[0]
         this.numHands = this.hands.length
-        this.delegator = delegator
+
+        if (delegator) {
+            this.delegator = delegator
+            this.delegator.register(this)
+        }
     }
 
     next: () => void = () => {
@@ -54,9 +70,49 @@ export default class Player implements PlayerInterface{
             this.delegator.next()
         }
         else {
-            Notifier.warn('No delegator set')
+            Notifier.warn('Player has not joined any game!')
         }
     }
+
+    join = (game: GameControlDelegator) => {
+        if (this.delegator) {
+            Notifier.error(`Player (${PlayerType[this.getType()]}) is already in a game!`)
+            return false
+        }
+
+        if (game.register(this)) {
+            Notifier.notify(`Player (${PlayerType[this.getType()]}) Joined Successfully!`)
+            this.delegator = game
+            return true
+        }
+        else {
+            Notifier.notify(`Player (${PlayerType[this.getType()]}) Cannot Join Game!`)
+            return false
+        }
+    }
+
+    //This is triggered when GameController runs register(Player) direct without going through Player class
+    setDelegator = (delegator: GameControlDelegator) => {
+        this.delegator = delegator
+    }
+
+    leave = () => {
+        if (this.delegator) {
+            if (this.delegator.unregister(this)) {
+                Notifier.notify(`Player (${PlayerType[this.getType()]}) Left Successfully!`)
+                this.delegator = undefined
+                return true
+            }
+            else {
+                Notifier.notify(`Player (${PlayerType[this.getType()]}) Cannot leave Game!`)
+                return false
+            }
+        }
+        else {
+            Notifier.notify(`Player (${PlayerType[this.getType()]}) is not in a game!`)
+            return false
+        }
+    } 
     
     canHit: () => boolean = () => {
         return false
@@ -74,12 +130,21 @@ export default class Player implements PlayerInterface{
 
     }
 
-    changeBet: (forHand: number, bet?: number) => void = () => {
+    changeBetBy = (forHand: number, change?: number) => {
 
     }
 
-    changeHand: (change: number) => void = () => {
+    changeBetTo = (forHand: number, bet?: number) => {
 
+    }
+
+    changeHandBy = (change: number) => {
+        return this.changeHandTo(this.hands.length + change)
+    }
+
+    changeHandTo = (setTo: number) => {
+        this.hands = Array(setTo).fill(new Hand())
+        return this
     }
 
     addHand: (change: number) => PlayerInterface = () => {
@@ -90,6 +155,22 @@ export default class Player implements PlayerInterface{
         return this
     }
 
+    numOfHands = () => {
+        return this.hands.length
+    }
+
+    getType: () => PlayerType = () => {
+        return this.type
+    }
+
+    getGameID = () => {
+        if (this.delegator) {
+            return this.delegator.gid
+        }
+        else {
+            return 'No game id found'
+        }
+    }
 
 }
 
