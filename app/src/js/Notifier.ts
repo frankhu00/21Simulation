@@ -11,7 +11,8 @@ class NotificationSystem {
     }
 
     notify(msg: string) {
-        console.log(msg)
+        // Silenced for now
+        // console.log(msg)
         return
     }
 

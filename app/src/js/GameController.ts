@@ -15,17 +15,16 @@ export interface GameControlDelegator {
     next: () => void
     register: (player: PlayerInterface) => boolean
     unregister: (player: PlayerInterface) => boolean
+    getOpenHands: () => number
 }
 export interface GameControl {
     readonly rule: PlayRuleOption
     readonly config: GameConfiguration
     flowOrder: GameFlowInterface[]
-    totalPlayers: number
-    totalHands: number
     players: PlayerInterface[]
     init: (players?: PlayerInterface[]) => boolean 
-    getOpenHands: () => number
-    getTotalHandsFromAllPlayers: (players: PlayerInterface[]) => number
+    getTotalHands: (players: PlayerInterface[]) => number
+    getTotalPlayers: () => number
     addPlayer: (player: PlayerInterface) => void
     removePlayer: (player: PlayerInterface) => void
     updateTableStatics: (players: PlayerInterface[]) => boolean
@@ -38,8 +37,11 @@ class GameController implements GameControl, GameControlDelegator {
     readonly rule: PlayRuleOption = defaultRules
     readonly config: GameConfiguration = defaultConfig
     public flowOrder: GameFlowInterface[]
-    public totalPlayers: number = 0
-    public totalHands: number = 0 //because a table spot is taken by a hand and not neccessarily a player
+
+    //These two can change when player class changes hands etc
+    // public totalPlayers: number = 0
+    // public totalHands: number = 0 //because a table spot is taken by a hand and not neccessarily a player
+
     public players: PlayerInterface[] = []
     private shoeInProgress: boolean = false
 
@@ -60,8 +62,8 @@ class GameController implements GameControl, GameControlDelegator {
 
     init: (players?: PlayerInterface[]) => boolean = (players?: PlayerInterface[]) => {
         this.shoeInProgress = false
-        this.totalHands = 0
-        this.totalPlayers = 0
+        // this.totalHands = 0
+        // this.totalPlayers = 0
         if (players) {
             return this.updateTableStatics(players)
         }
@@ -102,7 +104,7 @@ class GameController implements GameControl, GameControlDelegator {
 
         let openHands = this.getOpenHands()
         if (openHands > 0) {
-            player.changeHandTo(1).setDelegator(this)
+            player.setDelegator(this).changeHandTo(1)
             this.addPlayer(player)
             return this.updateTableStatics(this.players)
         }
@@ -117,7 +119,7 @@ class GameController implements GameControl, GameControlDelegator {
 
     updateTableStatics = (players: PlayerInterface[]) => {
         let { tableMaxHands } = this.config
-        let initNumHands = this.getTotalHandsFromAllPlayers(players)
+        let initNumHands = this.getTotalHands(players)
         if (initNumHands > tableMaxHands) {
             Notifier.error(`The total number of hands (${initNumHands}) can not be greater than ${tableMaxHands}!`)
             return false
@@ -128,21 +130,25 @@ class GameController implements GameControl, GameControlDelegator {
         }
 
         this.players = players
-        this.totalHands = initNumHands
-        this.totalPlayers = players.length
+        // this.totalHands = initNumHands
+        // this.totalPlayers = players.length
 
         this.assignPosition(players)
         return true
     }
 
-    getTotalHandsFromAllPlayers(players: PlayerInterface[]) {
+    getTotalPlayers() {
+        return this.players.length
+    }
+
+    getTotalHands(players: PlayerInterface[] = this.players) {
         let totalHands = 0
         players.forEach( p => totalHands += p.numOfHands() )
         return totalHands
     }
 
     getOpenHands = () => {
-        return this.config.tableMaxHands - this.getTotalHandsFromAllPlayers(this.players)
+        return this.config.tableMaxHands - this.getTotalHands(this.players)
     }
 
     checkHandsPerPlayer(player: PlayerInterface) {

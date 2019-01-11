@@ -31,7 +31,7 @@ export interface PlayerInterface {
     leave: () => boolean
     getType: () => PlayerType
     getGameID: () => string
-    setDelegator: (delegator: GameControlDelegator) => any
+    setDelegator: (delegator: GameControlDelegator) => PlayerInterface
     //Need change position
 }
 
@@ -70,13 +70,13 @@ export default class Player implements PlayerInterface {
             this.delegator.next()
         }
         else {
-            Notifier.warn('Player has not joined any game!')
+            Notifier.notify('Player has not joined any game!')
         }
     }
 
     join = (game: GameControlDelegator) => {
         if (this.delegator) {
-            Notifier.error(`Player (${PlayerType[this.getType()]}) is already in a game!`)
+            Notifier.notify(`Player (${PlayerType[this.getType()]}) is already in a game!`)
             return false
         }
 
@@ -94,6 +94,7 @@ export default class Player implements PlayerInterface {
     //This is triggered when GameController runs register(Player) direct without going through Player class
     setDelegator = (delegator: GameControlDelegator) => {
         this.delegator = delegator
+        return this
     }
 
     leave = () => {
@@ -135,7 +136,10 @@ export default class Player implements PlayerInterface {
     }
 
     changeBetTo = (forHand: number, bet?: number) => {
-
+        if (!this.delegator) {
+            Notifier.notify('Player is not in a game, can not change bet')
+            // return this
+        }
     }
 
     changeHandBy = (change: number) => {
@@ -143,7 +147,30 @@ export default class Player implements PlayerInterface {
     }
 
     changeHandTo = (setTo: number) => {
-        this.hands = Array(setTo).fill(new Hand())
+        if (!this.delegator) {
+            Notifier.notify('Player is not in a game, can not change number of hands')
+            return this
+        }
+
+        //For adding hands case
+        if (setTo > this.numOfHands()) {
+            if (this.delegator.getOpenHands() >= (setTo - this.numOfHands())) {
+                this.hands = Array(setTo).fill(new Hand())
+            }
+            else {
+                Notifier.notify(`Can not set hands to ${setTo} due to max table size. The table has ${this.delegator.getOpenHands()} spot(s) left.`)
+            }
+        }
+        //For lowering hands case
+        else {
+            if (setTo > 0) {
+                this.hands = Array(setTo).fill(new Hand())
+            }
+            else {
+                Notifier.notify('Can not set hands to lower than 1')
+            }
+        }
+
         return this
     }
 
