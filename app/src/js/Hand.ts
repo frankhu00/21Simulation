@@ -9,14 +9,12 @@ export interface PlayingHand {
     doubleDown: () => PlayingHand
     insurance: () => void
     surrender: () => void
-    canHit: () => boolean
-    canSplit: () => boolean
-    canDoubleDown: () => boolean
-    canSurrender: () => boolean
     computeValue: () => void
     getFirstCard: (card: Card) => PlayingHand
     getSecondCard: (card: Card) => PlayingHand
     getHighestValue: () => number
+    getBet: () => number
+    setBet: (bet: number) => PlayingHand
     firstCard?: Card,
     secondCard?: Card,
     handCards: Card[]
@@ -91,13 +89,23 @@ class Hand implements PlayingHand {
     getSecondCard(card: Card) {
         this.secondCard = card
         this.handCards.push(card)
-        this.isHandValid = (this.handCards.length >= 2)
+        this.isHandValid = (this.handCards.length >= 2 && this.bet > 0)
         this.isBusted = false
 
         this.resetValue()
         this.computeValue()
 
         this.isBlackJack = this.handCards.length == 2 && this.value.indexOf(21) > -1
+        return this
+    }
+
+    getBet = () => {
+        return this.bet
+    }
+
+    setBet = (bet: number) => {
+        //This only tests for bet can't be < 0, the min/max bet part will be handled via Player class
+        this.bet = (bet > 0) ? bet : 0
         return this
     }
 
@@ -178,22 +186,6 @@ class Hand implements PlayingHand {
     
     surrender() {
 
-    }
-    
-    canHit() {
-        return true
-    }
-
-    canSplit() {
-        return true
-    }
-
-    canDoubleDown() {
-        return true
-    }
-
-    canSurrender() {
-        return true
     }
 
 }

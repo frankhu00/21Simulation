@@ -16,6 +16,8 @@ export interface GameControlDelegator {
     register: (player: PlayerInterface) => boolean
     unregister: (player: PlayerInterface) => boolean
     getOpenHands: () => number
+    getMinBet: () => number
+    getMaxBet: () => number
 }
 export interface GameControl {
     readonly rule: PlayRuleOption
@@ -115,6 +117,16 @@ class GameController implements GameControl, GameControlDelegator {
     //Delegation methods
     unregister(player: PlayerInterface) {
         return false
+    }
+
+    //Delegation
+    getMinBet = () => {
+        return this.rule.minBet
+    }
+
+    //Delegation
+    getMaxBet = () => {
+        return this.rule.maxBet
     }
 
     updateTableStatics = (players: PlayerInterface[]) => {

@@ -20,8 +20,8 @@ export interface PlayerInterface {
 
     completeCurrentHand: () => void
     next: () => void
-    changeBetBy: (forHand: number, change?: number) => void
-    changeBetTo: (forHand: number, bet?: number) => void
+    changeBetBy: (chane: number) => PlayerInterface
+    changeBetTo: (setTo: number) => PlayerInterface
     changeHandBy: (change: number) => PlayerInterface
     changeHandTo: (setTo: number) => PlayerInterface
     addHand: (change: number) => PlayerInterface
@@ -131,15 +131,42 @@ export default class Player implements PlayerInterface {
 
     }
 
-    changeBetBy = (forHand: number, change?: number) => {
-
+    betToMin = () => {
+        const min = this.delegator ? this.delegator.getMinBet() : 0
+        return this.changeBetTo(min)
     }
 
-    changeBetTo = (forHand: number, bet?: number) => {
+    betToMax = () => {
+        const max = this.delegator ? this.delegator.getMaxBet() : 0
+        return this.changeBetTo(max)
+    }
+
+    changeBetBy = (change: number) => {
+        return this.changeBetTo(this.getCurrentHand().getBet() + change)
+    }
+
+    changeBetTo = (setTo: number) => {
+        
         if (!this.delegator) {
             Notifier.notify('Player is not in a game, can not change bet')
-            // return this
+            return this
         }
+
+        const min = this.delegator.getMinBet()
+        const max = this.delegator.getMaxBet()
+
+        if (setTo < min) {
+            Notifier.notify(`The minimum bet is ${min}! Auto bet to ${min}.`)
+            setTo = min
+        }
+
+        if (setTo > max) {
+            Notifier.notify(`The maximum bet is ${max}! Auto bet to ${max}.`)
+            setTo = max
+        }
+
+        this.getCurrentHand().setBet(setTo)
+        return this
     }
 
     changeHandBy = (change: number) => {
@@ -199,6 +226,10 @@ export default class Player implements PlayerInterface {
         }
     }
 
+    getCurrentHand = () => {
+        return this.currentHand
+    }
+
 }
 
 //Need to think about structure...
@@ -210,3 +241,4 @@ export default class Player implements PlayerInterface {
 
 //So GameController controls the Player and Player controls Hand
 //GameController does not control Hand
+//Hand has the bet amount ? or Player?
