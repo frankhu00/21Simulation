@@ -10,9 +10,13 @@ export interface PlayingHand {
     insurance: () => void
     surrender: () => void
     computeValue: () => void
-    getFirstCard: (card: Card) => PlayingHand
-    getSecondCard: (card: Card) => PlayingHand
+    dealFirstCard: (card: Card) => PlayingHand
+    dealSecondCard: (card: Card) => PlayingHand
+    getFirstCard: () => Card|undefined
+    getSecondCard: () => Card|undefined
+    getValue: () => number[]
     getHighestValue: () => number
+    getTotalCards: () => number
     getBet: () => number
     setBet: (bet: number) => PlayingHand
     firstCard?: Card,
@@ -45,8 +49,11 @@ class Hand implements PlayingHand {
     public playerType: PlayerType
 
 
-    constructor(firstCard?: Card, playerType: PlayerType = PlayerType.NPC) {
+    constructor(firstCard?: Card,  bet?: number, playerType: PlayerType = PlayerType.NPC) {
         this.playerType = playerType
+
+        this.bet = (bet) ? bet : 0
+
         if (playerType == PlayerType.MC) {
             this.isControllable = true
             this.isDealer = false
@@ -77,7 +84,7 @@ class Hand implements PlayingHand {
         return this
     }
 
-    getFirstCard(card: Card) {
+    dealFirstCard(card: Card) {
         this.firstCard = card
         this.handCards.push(card)
         this.isEmptyHand = false
@@ -86,7 +93,7 @@ class Hand implements PlayingHand {
         return this
     }
 
-    getSecondCard(card: Card) {
+    dealSecondCard(card: Card) {
         this.secondCard = card
         this.handCards.push(card)
         this.isHandValid = (this.handCards.length >= 2 && this.bet > 0)
@@ -99,8 +106,20 @@ class Hand implements PlayingHand {
         return this
     }
 
+    getFirstCard = () => {
+        return this.firstCard
+    }
+
+    getSecondCard = () => {
+        return this.secondCard
+    }
+
     getBet = () => {
         return this.bet
+    }
+
+    getTotalCards = () => {
+        return this.handCards.length
     }
 
     setBet = (bet: number) => {
@@ -145,6 +164,10 @@ class Hand implements PlayingHand {
         }
 
         this.isBusted = this.value.every( v => v > 21)
+    }
+
+    getValue() {
+        return this.value.filter( v => v <= 21)
     }
 
     getHighestValue() {

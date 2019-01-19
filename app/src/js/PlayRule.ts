@@ -4,6 +4,7 @@ const defaultRules: PlayRuleOption = {
     doubleDownOn: true, //on any pair
     splitOn: true, //on any pair (except Aces)
     maxSplitNum: 0, //unlimited
+    strictSplit: true, //true means Q and Q can split, but NOT Q and 10, etc. Whereas false means Q and 10 can split
     splitAces: true,
     maxSplitAceNum: 2,
     minBet: 50,
@@ -16,9 +17,10 @@ const defaultRules: PlayRuleOption = {
 export interface PlayRuleOption {
     mse: boolean,
     hitSoft17: boolean,
-    doubleDownOn: boolean | any[], 
-    splitOn: boolean | any[],
+    doubleDownOn: boolean | number[], 
+    splitOn: boolean | number[],
     maxSplitNum: number,
+    strictSplit: boolean,
     splitAces: boolean,
     maxSplitAceNum: number,
     minBet: number,

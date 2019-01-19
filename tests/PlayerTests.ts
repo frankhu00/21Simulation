@@ -2,7 +2,7 @@ import 'mocha';
 import { expect } from 'chai'
 import sinon from 'sinon'
 
-import Player , { PlayerType } from '../app/src/js/Player';
+import Player , { PlayerType } from '../app/src/js/Player'
 import GameController from '../app/src/js/GameController'
 
 describe('Player Class Tests', () => {
@@ -41,6 +41,17 @@ describe('Player Class Tests', () => {
         expect(updateC).to.eqls(3)
     })
 
+    it('Can validate min / max number of hands', () => {
+        let p = new Player(PlayerType.MC)
+        
+        p.join(GC)
+        p.changeHandTo(3) //ok
+            .changeHandTo(9) //should fail
+            .changeHandTo(-2) //should fail
+
+        expect(p.numOfHands()).to.eqls(3)
+    })
+
     it('Can use changeHandBy to call changeHandTo with proper arguments', () => {
         let p = new Player(PlayerType.MC)
         let changeBySpy = sinon.spy(p, 'changeHandTo')
@@ -54,6 +65,52 @@ describe('Player Class Tests', () => {
         expect(changeBySpy.getCall(1).calledWithExactly(3)).to.eqls(true)
         expect(changeBySpy.getCall(2).calledWithExactly(4)).to.eqls(true)
         expect(changeBySpy.getCall(3).calledWithExactly(2)).to.eqls(true)
+
+        expect(changeBySpy.callCount).to.eqls(4)
+    })
+
+
+    it('Can use changeBetTo to properly change bet amount', () => {
+        let p = new Player(PlayerType.MC)
+        let minBet = GC.rule.minBet
+        
+        p.join(GC) 
+        let whenJoin = p.getCurrentHand().getBet()
+        let updateA = p.changeBetTo(100).getCurrentHand().getBet()
+        let updateB = p.changeBetTo(150).getCurrentHand().getBet()
+        let updateC = p.changeBetTo(75).getCurrentHand().getBet()
+
+        expect(whenJoin).to.eqls(minBet)
+        expect(updateA).to.eqls(100)
+        expect(updateB).to.eqls(150)
+        expect(updateC).to.eqls(75)
+    })
+
+    it('Can validate min / max bet amount', () => {
+        let p = new Player(PlayerType.MC)
+        
+        p.join(GC)
+        p.changeBetTo(2500) //ok
+            .changeHandTo(10000) //should fail
+            .changeHandTo(25) //should fail
+
+        expect(p.getCurrentHand().getBet()).to.eqls(2500)
+    })
+
+    it('Can use changeBetBy to call changeBetTo with proper arguments', () => {
+        let p = new Player(PlayerType.MC)
+        const minBet = GC.rule.minBet
+        let changeBySpy = sinon.spy(p, 'changeBetTo')
+        
+        p.join(GC) //1st call
+        p.changeBetBy(25) //2nd call
+            .changeBetBy(120) //3rd call
+            .changeBetBy(-75) //4th call
+        
+        expect(changeBySpy.getCall(0).calledWithExactly(minBet)).to.eqls(true)
+        expect(changeBySpy.getCall(1).calledWithExactly(minBet+25)).to.eqls(true)
+        expect(changeBySpy.getCall(2).calledWithExactly(minBet+25+120)).to.eqls(true)
+        expect(changeBySpy.getCall(3).calledWithExactly(minBet+25+120-75)).to.eqls(true)
 
         expect(changeBySpy.callCount).to.eqls(4)
     })

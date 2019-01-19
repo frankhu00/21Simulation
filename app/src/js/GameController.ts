@@ -3,6 +3,7 @@ import defaultConfig, { GameConfiguration } from './GameConfig'
 import { PlayerInterface, PlayerType } from './Player'
 
 import Notifier from './Notifier'
+import { PlayingHand } from './Hand';
 
 export interface GameFlowInterface {
     order: number,
@@ -18,6 +19,8 @@ export interface GameControlDelegator {
     getOpenHands: () => number
     getMinBet: () => number
     getMaxBet: () => number
+    canDoubleDown: (withHand: PlayingHand) => boolean
+    canSplit: (withHand: PlayingHand) => boolean
 }
 export interface GameControl {
     readonly rule: PlayRuleOption
@@ -29,7 +32,7 @@ export interface GameControl {
     getTotalPlayers: () => number
     addPlayer: (player: PlayerInterface) => void
     removePlayer: (player: PlayerInterface) => void
-    updateTableStatics: (players: PlayerInterface[]) => boolean
+    updateTableStatistics: (players: PlayerInterface[]) => boolean
     assignPosition: (players: PlayerInterface[]) => GameControl
 }
 
@@ -67,7 +70,7 @@ class GameController implements GameControl, GameControlDelegator {
         // this.totalHands = 0
         // this.totalPlayers = 0
         if (players) {
-            return this.updateTableStatics(players)
+            return this.updateTableStatistics(players)
         }
         return true
     }
@@ -106,9 +109,9 @@ class GameController implements GameControl, GameControlDelegator {
 
         let openHands = this.getOpenHands()
         if (openHands > 0) {
-            player.setDelegator(this).changeHandTo(1)
+            player.setDelegator(this).changeHandTo(1).changeBetTo(this.rule.minBet)
             this.addPlayer(player)
-            return this.updateTableStatics(this.players)
+            return this.updateTableStatistics(this.players)
         }
         
         return false
@@ -129,7 +132,65 @@ class GameController implements GameControl, GameControlDelegator {
         return this.rule.maxBet
     }
 
-    updateTableStatics = (players: PlayerInterface[]) => {
+    //Delegation
+    canSplit = (withHand: PlayingHand) => {
+        const firstCard = withHand.getFirstCard()
+        const secondCard = withHand.getSecondCard()
+        if (withHand.getTotalCards() != 2 || !firstCard || !secondCard) {
+            return false
+        }
+
+        if (firstCard.getKey() != secondCard.getKey()) {
+            return false
+        }
+
+        //After this point, firstCard == secondCard
+        if (firstCard.getKey() == 'A') {
+            return this.canSplitAces(withHand)
+        }
+        
+        if (typeof this.rule.splitOn == 'boolean') {
+            return this.rule.splitOn
+        }
+        else {
+            //Need to account for 
+            //      1) # of splits (WIP... how to do it)
+            //      2) strict splitting (QQ vs QK etc) (in QA)
+
+            // Ace case is taken care of above
+            if (this.rule.splitOn.includes(firstCard.getValue()[0])) {
+                if (this.rule.strictSplit) {
+                    return firstCard.getKey() == secondCard.getKey()
+                }
+                else {
+                    return true
+                }
+            }
+
+            return false
+        }
+    }
+
+    //Delegator private method
+    canSplitAces = (withHand: PlayingHand) => {
+        return false
+    }
+
+    //Delegation
+    canDoubleDown = (withHand: PlayingHand) => {
+        if (withHand.getTotalCards() != 2) {
+            return false
+        }
+        if (typeof this.rule.doubleDownOn == 'boolean') {
+            return this.rule.doubleDownOn
+        }
+        else {
+            const [hard, soft] = withHand.getValue()
+            return (this.rule.doubleDownOn.includes(hard) || this.rule.doubleDownOn.includes(soft))
+        }
+    }
+
+    updateTableStatistics = (players: PlayerInterface[]) => {
         let { tableMaxHands } = this.config
         let initNumHands = this.getTotalHands(players)
         if (initNumHands > tableMaxHands) {

@@ -22,27 +22,27 @@ describe('Playing Hand Tests', () => {
 
     it('Can Compute Values', () => {
 
-        let hand1 = new Hand(C3)
-        let hand2 = new Hand(C8)
-        let hand3 = new Hand(C5)
-        let hand4 = new Hand(CA)
-        let hand5 = new Hand(CA)
-        let hand6 = new Hand(CQ)
-        let invalidHand = new Hand(CK)
+        let hand1 = new Hand(C3, 10)
+        let hand2 = new Hand(C8, 10)
+        let hand3 = new Hand(C5, 10)
+        let hand4 = new Hand(CA, 10)
+        let hand5 = new Hand(CA, 10)
+        let hand6 = new Hand(CQ, 10)
+        let invalidHand = new Hand(CK, 10)
 
-        hand1.getSecondCard(C7)
+        hand1.dealSecondCard(C7)
 
-        hand2.getSecondCard(C7)
+        hand2.dealSecondCard(C7)
         hand2.hit(C10)
 
-        hand3.getSecondCard(C6)
+        hand3.dealSecondCard(C6)
         hand3.hit(C2).hit(C7)
         
-        hand4.getSecondCard(C6).hit(CA)
+        hand4.dealSecondCard(C6).hit(CA)
 
-        hand5.getSecondCard(C2)
+        hand5.dealSecondCard(C2)
 
-        hand6.getSecondCard(C6).hit(CA).hit(C3)
+        hand6.dealSecondCard(C6).hit(CA).hit(C3)
 
         let shouldBe: {[key: string]: any[]} = {
             'hand1': [3+7, false],
@@ -71,13 +71,13 @@ describe('Playing Hand Tests', () => {
     })
 
     it('Can Get Highest Valid Value', () => {
-        let hand1 = new Hand(C4)
-        let hand2 = new Hand(C9)
-        let hand3 = new Hand(CJ)
+        let hand1 = new Hand(C4, 10)
+        let hand2 = new Hand(C9, 10)
+        let hand3 = new Hand(CJ, 10)
 
-        hand1.getSecondCard(C8).hit(CA) //value = [4+8+1, 4+8+11]
-        hand2.getSecondCard(CJ)
-        hand3.getSecondCard(C5).hit(CA).hit(CK)
+        hand1.dealSecondCard(C8).hit(CA) //value = [4+8+1, 4+8+11]
+        hand2.dealSecondCard(CJ)
+        hand3.dealSecondCard(C5).hit(CA).hit(CK)
 
         let results: {[key: string]: number} = {
             'hand1': hand1.getHighestValue(),

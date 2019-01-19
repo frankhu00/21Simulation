@@ -120,10 +120,16 @@ export default class Player implements PlayerInterface {
     }
 
     canSplit: () => boolean = () => {
+        if (this.delegator) {
+            return this.delegator.canSplit(this.getCurrentHand())
+        }
         return false
     }
 
     canDoubleDown: () => boolean = () => {
+        if (this.delegator) {
+            return this.delegator.canDoubleDown(this.getCurrentHand())
+        }
         return false
     }
     
@@ -201,10 +207,12 @@ export default class Player implements PlayerInterface {
         return this
     }
 
+    //This is strictly for split
     addHand: (change: number) => PlayerInterface = () => {
         return this
     }
 
+    //This is strictly for split
     removeHand: (change: number) => PlayerInterface = () => {
         return this
     }
