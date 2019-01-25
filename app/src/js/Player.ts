@@ -8,18 +8,33 @@ export enum PlayerType {
     NPC,
     Dealer
 }
+
+export interface PlayerActionInterface {
+    name: string,
+    can: boolean,
+    action: () => any
+}
+
 export interface PlayerInterface {
     active: boolean
-    numHands: number
-    hands: PlayingHand[]
-    currentHand: PlayingHand
+    // numHands: number
+    // hands: PlayingHand[]
+    // currentHand: PlayingHand
     
     canHit: () => boolean
     canSplit: () => boolean
     canDoubleDown: () => boolean
+    canInsurance: () => boolean
 
+    hit: () => PlayerInterface
+    doubleDown: () => PlayerInterface
+    insurance: () => PlayerInterface
+    surrender: () => PlayerInterface
+
+    //this is stay
     completeCurrentHand: () => void
     next: () => void
+
     changeBetBy: (chane: number) => PlayerInterface
     changeBetTo: (setTo: number) => PlayerInterface
     changeHandBy: (change: number) => PlayerInterface
@@ -31,6 +46,7 @@ export interface PlayerInterface {
     leave: () => boolean
     getType: () => PlayerType
     getGameID: () => string
+    getCurrentHand: () => PlayingHand
     setDelegator: (delegator: GameControlDelegator) => PlayerInterface
     //Need change position
 }
@@ -40,9 +56,9 @@ export interface PlayerInterface {
 //Whereas NPC/Player class can always follow a custom rule set later on...
 export default class Player implements PlayerInterface {
     public active: boolean
-    public numHands: number
-    public currentHand: PlayingHand
-    public hands: PlayingHand[]
+    private numHands: number
+    private currentHand: PlayingHand
+    private hands: PlayingHand[]
     private type: PlayerType
     private delegator?: GameControlDelegator
 
@@ -116,7 +132,7 @@ export default class Player implements PlayerInterface {
     } 
     
     canHit: () => boolean = () => {
-        return false
+        return !this.getCurrentHand().isBusted
     }
 
     canSplit: () => boolean = () => {
@@ -133,6 +149,94 @@ export default class Player implements PlayerInterface {
         return false
     }
     
+    canInsurance: () => boolean = () => {
+        if (this.delegator) {
+            return this.delegator.canInsurance()
+        }
+        return false
+    }
+
+    canSurrender = () => {
+        //Will need to add cond to disable surrender when split
+        if (this.delegator && this.getCurrentHand().getTotalCards() == 2) {
+            return this.delegator.canSurrender()
+        }
+        return false
+    }
+
+    //This is more of an UI interface fn
+    action = () => {
+        const canPerform : PlayerActionInterface[] = [
+            {
+                name: 'Stay',
+                can: true,
+                action: this.completeCurrentHand
+            },
+            {
+                name: 'Hit',
+                can: this.canHit(),
+                action: this.hit
+            },
+            {
+                name: 'Double Down',
+                can: this.canDoubleDown(),
+                action: this.doubleDown
+            },
+            {
+                name: 'Insurance',
+                can: this.canInsurance(),
+                action: this.insurance
+            },
+            {
+                name: 'Split',
+                can: this.canSplit(),
+                action: this.split
+            },
+            {
+                name: 'Surrender',
+                can: this.canSurrender(),
+                action: this.surrender
+            }
+        ]
+    }
+
+    hit = () => {
+        if (this.canHit()) {
+            const card = this.delegator!.deal() //bang operator should be fine...
+            if (card) {
+                this.getCurrentHand().hit(card)
+            }
+        }
+        return this
+    }
+
+    doubleDown = () => {
+        if (this.canDoubleDown()) {
+            const card = this.delegator!.deal() //bang operator should be fine...
+            if (card) {
+                this.getCurrentHand().hit(card)
+                this.changeBetBy(this.getCurrentHand().getBet())
+                this.completeCurrentHand();
+            }
+        }
+        return this
+    }
+
+    insurance = () => {
+        if (this.canInsurance()) {
+            this.getCurrentHand().isInsured = true
+        }
+        return this
+    }
+
+    split = () => {
+        return this
+    }
+
+    surrender = () => {
+        return this
+    }
+
     completeCurrentHand: () => void = () => {
 
     }

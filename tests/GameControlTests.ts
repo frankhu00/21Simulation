@@ -7,22 +7,24 @@ import defaultConfig, { GameConfiguration } from '../app/src/js/GameConfig'
 import defaultRules, { PlayRuleOption } from '../app/src/js/PlayRule'
 import Hand from '../app/src/js/Hand'
 import Card from '../app/src/js/Card'
+import { Deck, CardCollectionInterface } from '../app/src/js/CardCollection'
 
 
 describe('GameController Tests', () => {
 
     let GID: string
     let GC: GameController
+    let dummyDeck: CardCollectionInterface = new Deck()
 
     let fourPlayerConfig : GameConfiguration
     let maxFourGC: GameController
 
     beforeEach( () => {
         GID = 'GameTestID'
-        GC = new GameController(GID)
+        GC = new GameController(dummyDeck, GID)
 
         fourPlayerConfig = Object.assign({}, defaultConfig, {tableMaxHands: 4})
-        maxFourGC = new GameController('max 4 players/hands', defaultRules, fourPlayerConfig)
+        maxFourGC = new GameController(dummyDeck, 'max 4 players/hands', defaultRules, fourPlayerConfig)
     })
 
     it('Can register players', () => {
@@ -181,10 +183,10 @@ describe('GameController Tests', () => {
         const ddOn789: PlayRuleOption = Object.assign({}, defaultRules, { doubleDownOn: [7,8,9] })
         const ddOn12: PlayRuleOption = Object.assign({}, defaultRules, { doubleDownOn: [12] })
         const noDD: PlayRuleOption = Object.assign({}, defaultRules, { doubleDownOn: false })
-        const gc = new GameController()
-        const gc1 = new GameController('DD on 7,8,9', ddOn789)
-        const gc2 = new GameController('DD only on 12', ddOn12)
-        const gc3 = new GameController('No DD', noDD)
+        const gc = new GameController(dummyDeck)
+        const gc1 = new GameController(dummyDeck, 'DD on 7,8,9', ddOn789)
+        const gc2 = new GameController(dummyDeck, 'DD only on 12', ddOn12)
+        const gc3 = new GameController(dummyDeck, 'No DD', noDD)
         const h1 = new Hand(new Card('2'), 50).dealSecondCard(new Card('7')) //value: 9
         const h2 = new Hand(new Card('2'), 50).dealSecondCard(new Card('10')) //value: 12
         const h3 = new Hand(new Card('2'), 50).dealSecondCard(new Card('2')) //value: 4

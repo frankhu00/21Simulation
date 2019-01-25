@@ -4,12 +4,14 @@ import sinon from 'sinon'
 
 import Player , { PlayerType } from '../app/src/js/Player'
 import GameController from '../app/src/js/GameController'
+import { CardCollectionInterface, Deck } from '../app/src/js/CardCollection';
 
 describe('Player Class Tests', () => {
 
     let GC: GameController
+    let dummyDeck: CardCollectionInterface = new Deck()
     beforeEach( () => {
-        GC = new GameController()
+        GC = new GameController(dummyDeck)
     })
     
     it('Can delegate next fn to GameControlDelegator', () => {

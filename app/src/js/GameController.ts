@@ -1,9 +1,14 @@
+//WIP:
+// canSplit logic (not needed for mvp)
+
 import defaultRules, { PlayRuleOption } from './PlayRule'
 import defaultConfig, { GameConfiguration } from './GameConfig'
-import { PlayerInterface, PlayerType } from './Player'
+import Player, { PlayerInterface, PlayerType } from './Player'
 
 import Notifier from './Notifier'
 import { PlayingHand } from './Hand';
+import Card from './Card';
+import { CardCollectionInterface } from './CardCollection';
 
 export interface GameFlowInterface {
     order: number,
@@ -12,6 +17,8 @@ export interface GameFlowInterface {
 }
 
 export interface GameControlDelegator {
+    readonly dealer: PlayerInterface
+    readonly shoe: CardCollectionInterface
     gid: string
     next: () => void
     register: (player: PlayerInterface) => boolean
@@ -19,8 +26,12 @@ export interface GameControlDelegator {
     getOpenHands: () => number
     getMinBet: () => number
     getMaxBet: () => number
+    getDealerShowingCard: () => Card|undefined
     canDoubleDown: (withHand: PlayingHand) => boolean
     canSplit: (withHand: PlayingHand) => boolean
+    canInsurance: () => boolean
+    canSurrender: () => boolean
+    deal: () => Card|undefined
 }
 export interface GameControl {
     readonly rule: PlayRuleOption
@@ -41,6 +52,8 @@ class GameController implements GameControl, GameControlDelegator {
     public gid: string
     readonly rule: PlayRuleOption = defaultRules
     readonly config: GameConfiguration = defaultConfig
+    readonly dealer: PlayerInterface = new Player(PlayerType.Dealer)
+    readonly shoe: CardCollectionInterface
     public flowOrder: GameFlowInterface[]
 
     //These two can change when player class changes hands etc
@@ -50,10 +63,11 @@ class GameController implements GameControl, GameControlDelegator {
     public players: PlayerInterface[] = []
     private shoeInProgress: boolean = false
 
-    constructor(id: string = 'GameController', rule: PlayRuleOption = defaultRules, config: GameConfiguration = defaultConfig) {
+    constructor(shoe: CardCollectionInterface, id: string = 'GameController', rule: PlayRuleOption = defaultRules, config: GameConfiguration = defaultConfig) {
         this.gid = id
         this.rule = rule
         this.config = config
+        this.shoe = shoe
 
         this.flowOrder = [...Array(this.config.tableMaxHands)].map((_, i) => {
             const gameFlow : GameFlowInterface = {
@@ -63,6 +77,14 @@ class GameController implements GameControl, GameControlDelegator {
             }
             return gameFlow
         })
+
+        const dealerFlow : GameFlowInterface = {
+            order: -1,
+            position: -1,
+            player: this.dealer
+        }
+
+        this.flowOrder.push(dealerFlow)
     }
 
     init: (players?: PlayerInterface[]) => boolean = (players?: PlayerInterface[]) => {
@@ -85,6 +107,15 @@ class GameController implements GameControl, GameControlDelegator {
         })
 
         return this
+    }
+
+    //Delegation methods
+    deal() {
+        const dealtCard = this.shoe.deal()
+        if (!dealtCard) {
+            Notifier.error('GameController can\'t deal card. Shoe is empty')
+        }
+        return dealtCard
     }
 
     //Delegation methods
@@ -133,6 +164,9 @@ class GameController implements GameControl, GameControlDelegator {
     }
 
     //Delegation
+    getDealerShowingCard = () => this.dealer.getCurrentHand().getFirstCard()
+
+    //Delegation
     canSplit = (withHand: PlayingHand) => {
         const firstCard = withHand.getFirstCard()
         const secondCard = withHand.getSecondCard()
@@ -150,6 +184,7 @@ class GameController implements GameControl, GameControlDelegator {
         }
         
         if (typeof this.rule.splitOn == 'boolean') {
+            //This also means strictSplit is false
             return this.rule.splitOn
         }
         else {
@@ -188,6 +223,23 @@ class GameController implements GameControl, GameControlDelegator {
             const [hard, soft] = withHand.getValue()
             return (this.rule.doubleDownOn.includes(hard) || this.rule.doubleDownOn.includes(soft))
         }
+    }
+
+    //Delegation
+    canInsurance = () => {
+        const show = this.getDealerShowingCard()
+        if (show) {
+            return show.getKey() == 'A'
+        }
+        else {
+            Notifier.notify('Dealer has no cards.')
+            return false
+        }
+    }
+
+    //Delegation
+    canSurrender = () => {
+        return this.rule.surrender
     }
 
     updateTableStatistics = (players: PlayerInterface[]) => {

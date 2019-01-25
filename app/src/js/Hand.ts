@@ -6,8 +6,6 @@ export interface PlayingHand {
     hit: (card: Card) => PlayingHand
     stand: () => PlayingHand
     split: () => PlayingHand[];
-    doubleDown: () => PlayingHand
-    insurance: () => void
     surrender: () => void
     computeValue: () => void
     dealFirstCard: (card: Card) => PlayingHand
@@ -15,36 +13,41 @@ export interface PlayingHand {
     getFirstCard: () => Card|undefined
     getSecondCard: () => Card|undefined
     getValue: () => number[]
+    getRawValue: () => number[]
     getHighestValue: () => number
     getTotalCards: () => number
     getBet: () => number
     setBet: (bet: number) => PlayingHand
-    firstCard?: Card,
-    secondCard?: Card,
-    handCards: Card[]
-    value: number[] //for cases like soft 17
-    bet: number
+    // firstCard?: Card,
+    // secondCard?: Card,
+    // handCards: Card[]
+    // value: number[] //for cases like soft 17
+    // bet: number
     isDealer: boolean
     isControllable: boolean
     isBusted: boolean
     isBlackJack: boolean
     isHandValid: boolean
     isEmptyHand: boolean
+    isInsured: boolean
     playerType: PlayerType
 }
 
 class Hand implements PlayingHand {
 
-    public firstCard?: Card = undefined
-    public secondCard?: Card = undefined
-    public handCards: Card[] = []
+    private firstCard?: Card = undefined
+    private secondCard?: Card = undefined
+    private handCards: Card[] = []
+    private bet: number = 0
+    private value: number[] = [0]
+
+
     public isHandValid: boolean = false
     public isBusted: boolean = false
     public isDealer: boolean = false
     public isControllable: boolean = false
     public isBlackJack: boolean = false
-    public value: number[] = [0]
-    public bet: number = 0
+    public isInsured: boolean = false
     public isEmptyHand: boolean = true
     public playerType: PlayerType
 
@@ -105,6 +108,8 @@ class Hand implements PlayingHand {
         this.isBlackJack = this.handCards.length == 2 && this.value.indexOf(21) > -1
         return this
     }
+
+    
 
     getFirstCard = () => {
         return this.firstCard
@@ -170,6 +175,10 @@ class Hand implements PlayingHand {
         return this.value.filter( v => v <= 21)
     }
 
+    getRawValue = () => {
+        return this.value
+    }
+
     getHighestValue() {
         if (this.value.length == 1) {
             return this.value[0] > 21 ? 0 : this.value[0]
@@ -197,14 +206,6 @@ class Hand implements PlayingHand {
     split() {
         //need to run check first
         return [new Hand(this.firstCard), new Hand(this.secondCard as Card)]
-    }
-    
-    doubleDown() {
-        return this
-    }
-    
-    insurance() {
-        
     }
     
     surrender() {

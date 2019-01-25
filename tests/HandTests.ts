@@ -55,12 +55,12 @@ describe('Playing Hand Tests', () => {
         }
  
         let results: {[key: string]: any[]} = {
-            'hand1': [...hand1.value, hand1.isBusted],
-            'hand2': [...hand2.value, hand2.isBusted],
-            'hand3': [...hand3.value, hand3.isBusted],
-            'hand4': [...hand4.value, hand4.isBusted],
-            'hand5': [...hand5.value, hand5.isBusted],
-            'hand6': [...hand6.value, hand6.isBusted],
+            'hand1': [...hand1.getRawValue(), hand1.isBusted],
+            'hand2': [...hand2.getRawValue(), hand2.isBusted],
+            'hand3': [...hand3.getRawValue(), hand3.isBusted],
+            'hand4': [...hand4.getRawValue(), hand4.isBusted],
+            'hand5': [...hand5.getRawValue(), hand5.isBusted],
+            'hand6': [...hand6.getRawValue(), hand6.isBusted],
             'invalidHand': [0, invalidHand.isBusted]
         }
 

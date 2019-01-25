@@ -24,6 +24,7 @@ export interface CardCollectionInterface {
     cards: Card[];
     pastCardState: Array<CardStateLog>;
     get: () => Card[];
+    deal: () => Card|undefined;
     clone: () => CardCollectionInterface;
     count: () => number;
     saveCardState: (action: string, changes?: any) => void;
@@ -34,7 +35,7 @@ export interface CardCollectionInterface {
     getCards: (cardList: Card[] | Card, matchSuit: boolean) => Card[] | boolean;
     addCard: (card: Card | Card[]) => CardCollectionInterface;
     removeCards: (card: Card | number, matchSuit: boolean) => Card[] | boolean;
-    tossCard: () => Card | undefined;
+    tossCard: () => CardCollectionInterface;
     createCard: (representation: number, deck: number) => Card;
     generateDecks: (deck: number) => Card[];
     generateCardList: (numCards: number, deck: number, setRC: setRCType ) => Card[];
@@ -55,6 +56,14 @@ class CardCollection implements CardCollectionInterface {
 
     get() {
         return this.cards
+    }
+
+    deal() {
+        let dealtCard = this.cards.shift()
+        if (!dealtCard) {
+            Notifier.error('Ran out of cards to dealt')
+        }
+        return dealtCard
     }
 
     clone() {
@@ -178,10 +187,10 @@ class CardCollection implements CardCollectionInterface {
         }
     }
 
-    //Removes first card (deal the first card)
-    //This probably won't have saveCardState since it going to be used as the method to deal cards
+    //Removes first card (goes straight to tha shoe bin)
     tossCard() {
-        return this.cards.shift()
+        this.cards.shift()
+        return this
     }
 
     createCard(representation: number, deck: number = 1) {
