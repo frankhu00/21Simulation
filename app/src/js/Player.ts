@@ -20,6 +20,11 @@ export interface PlayerInterface {
     // numHands: number
     // hands: PlayingHand[]
     // currentHand: PlayingHand
+
+    getBankroll: () => number
+    updateBankroll: (amount: number) => PlayerInterface
+    setBankroll: (to: number) => PlayerInterface
+    hasEnoughBankroll: (amount: number, useBankroll?: number) => boolean
     
     canHit: () => boolean
     canSplit: () => boolean
@@ -47,6 +52,7 @@ export interface PlayerInterface {
     getType: () => PlayerType
     getGameID: () => string
     getCurrentHand: () => PlayingHand
+    getTotalBetFromAllHands: () => number
     setDelegator: (delegator: GameControlDelegator) => PlayerInterface
     //Need change position
 }
@@ -56,13 +62,14 @@ export interface PlayerInterface {
 //Whereas NPC/Player class can always follow a custom rule set later on...
 export default class Player implements PlayerInterface {
     public active: boolean
-    private numHands: number
-    private currentHand: PlayingHand
+    // private numHands: number
+    private bankroll: number = 0
+    private currentHandIndex: number = 0
     private hands: PlayingHand[]
     private type: PlayerType
     private delegator?: GameControlDelegator
 
-    constructor(type: PlayerType = PlayerType.NPC, delegator?: GameControlDelegator, hands?: PlayingHand[]) {
+    constructor(type: PlayerType = PlayerType.NPC, delegator?: GameControlDelegator, hands?: PlayingHand[], bankroll?: number) {
         this.type = type
         if (hands) {
             this.hands = hands
@@ -72,8 +79,12 @@ export default class Player implements PlayerInterface {
             this.hands = [new Hand(undefined, type)]
             this.active = false
         }
-        this.currentHand = this.hands[0]
-        this.numHands = this.hands.length
+        this.currentHandIndex = 0
+        // this.numHands = this.hands.length
+
+        if (bankroll) {
+            this.setBankroll(bankroll)
+        }
 
         if (delegator) {
             this.delegator = delegator
@@ -86,13 +97,13 @@ export default class Player implements PlayerInterface {
             this.delegator.next()
         }
         else {
-            Notifier.notify('Player has not joined any game!')
+            Notifier.error('Player has not joined any game!')
         }
     }
 
     join = (game: GameControlDelegator) => {
         if (this.delegator) {
-            Notifier.notify(`Player (${PlayerType[this.getType()]}) is already in a game!`)
+            Notifier.error(`Player (${PlayerType[this.getType()]}) is already in a game!`)
             return false
         }
 
@@ -103,6 +114,41 @@ export default class Player implements PlayerInterface {
         }
         else {
             Notifier.notify(`Player (${PlayerType[this.getType()]}) Cannot Join Game!`)
+            return false
+        }
+    }
+
+    getBankroll = () => {
+        return this.bankroll
+    }
+
+    updateBankroll = (amount: number) => {
+        this.bankroll += amount
+        return this
+    }
+
+    setBankroll = (to: number) => {
+        this.bankroll = to
+        return this
+    }
+
+    hasEnoughBankroll = (amount: number, useBankroll?: number) => {
+        if (amount > 0) {
+            return (typeof useBankroll != 'undefined') ? useBankroll >= amount : this.getBankroll() >= amount
+        }
+        else {
+            return false
+        }
+    }
+
+    //This is not in any interface atm
+    //Requirements that all actions need to pass (only bankroll so far)
+    //Bind this to action UI fn
+    actionRequirements = (actionCheck: () => boolean) => {
+        if (this.hasEnoughBankroll(this.getCurrentHand().getBet())) {
+            return actionCheck()
+        }
+        else {
             return false
         }
     }
@@ -126,7 +172,7 @@ export default class Player implements PlayerInterface {
             }
         }
         else {
-            Notifier.notify(`Player (${PlayerType[this.getType()]}) is not in a game!`)
+            Notifier.error(`Player (${PlayerType[this.getType()]}) is not in a game!`)
             return false
         }
     } 
@@ -179,17 +225,17 @@ export default class Player implements PlayerInterface {
             },
             {
                 name: 'Double Down',
-                can: this.canDoubleDown(),
+                can: this.actionRequirements.call(this, this.canDoubleDown),
                 action: this.doubleDown
             },
             {
                 name: 'Insurance',
-                can: this.canInsurance(),
+                can: this.actionRequirements.call(this, this.canInsurance),
                 action: this.insurance
             },
             {
                 name: 'Split',
-                can: this.canSplit(),
+                can: this.actionRequirements.call(this, this.canSplit),
                 action: this.split
             },
             {
@@ -225,6 +271,7 @@ export default class Player implements PlayerInterface {
     insurance = () => {
         if (this.canInsurance()) {
             this.getCurrentHand().isInsured = true
+            //Need to set the amount...? or have a separate one? or just auto set 50% of bet amount?
         }
         return this
     }
@@ -238,6 +285,7 @@ export default class Player implements PlayerInterface {
     }
 
     completeCurrentHand: () => void = () => {
+        this.currentHandIndex++;
 
     }
 
@@ -258,7 +306,15 @@ export default class Player implements PlayerInterface {
     changeBetTo = (setTo: number) => {
         
         if (!this.delegator) {
-            Notifier.notify('Player is not in a game, can not change bet')
+            Notifier.error('Player is not in a game, can not change bet')
+            return this
+        }
+
+        // + means an increase in bet amount -> check bankroll has enough for the difference
+        // - means a decrease in bet amount -> always ok
+        let changeInBet = setTo - this.getCurrentHand().getBet()
+        if (changeInBet > 0 && !this.hasEnoughBankroll(changeInBet)) {
+            Notifier.error(`Player does NOT have sufficient bankroll.`)
             return this
         }
 
@@ -266,15 +322,23 @@ export default class Player implements PlayerInterface {
         const max = this.delegator.getMaxBet()
 
         if (setTo < min) {
-            Notifier.notify(`The minimum bet is ${min}! Auto bet to ${min}.`)
-            setTo = min
+        // Will need to take care of hasEnoughBankroll checks for auto betting
+        //     Notifier.notify(`The minimum bet is ${min}! Auto bet to ${min}.`)
+        //     setTo = min
+            Notifier.error(`The minimum bet is ${min}!`)
+            return this
         }
 
         if (setTo > max) {
-            Notifier.notify(`The maximum bet is ${max}! Auto bet to ${max}.`)
-            setTo = max
+        //     Notifier.notify(`The maximum bet is ${max}! Auto bet to ${max}.`)
+        //     setTo = max
+            Notifier.error(`The maximum bet is ${max}!`)
+            return this
         }
 
+        //Get back currentHand bet amount to bankroll first        
+        this.updateBankroll(this.getCurrentHand().getBet())
+        this.updateBankroll(-1*setTo) //subtract setTo bet amount
         this.getCurrentHand().setBet(setTo)
         return this
     }
@@ -285,27 +349,49 @@ export default class Player implements PlayerInterface {
 
     changeHandTo = (setTo: number) => {
         if (!this.delegator) {
-            Notifier.notify('Player is not in a game, can not change number of hands')
+            Notifier.error('Player is not in a game, can not change number of hands')
             return this
         }
+
+        const minBetPerHand = this.delegator.getMinBetForNumHands(setTo)
+        const totalBankrollNeeded = minBetPerHand * setTo
+        const currentTotalBet = this.getTotalBetFromAllHands()
 
         //For adding hands case
         if (setTo > this.numOfHands()) {
             if (this.delegator.getOpenHands() >= (setTo - this.numOfHands())) {
-                this.hands = Array(setTo).fill(new Hand())
+
+                const extraBankrollNeeded = totalBankrollNeeded - currentTotalBet
+                if (this.hasEnoughBankroll(extraBankrollNeeded)) {
+                    this.updateBankroll(-1*extraBankrollNeeded)
+                    this.hands = Array(setTo).fill(new Hand().setBet(minBetPerHand))
+                }
+                else {
+                    Notifier.error(`Don't have enough bankroll to play ${setTo} hands!`)
+                }
             }
             else {
-                Notifier.notify(`Can not set hands to ${setTo} due to max table size. The table has ${this.delegator.getOpenHands()} spot(s) left.`)
+                Notifier.error(`Can not set hands to ${setTo} due to max table size. The table has ${this.delegator.getOpenHands()} spot(s) left.`)
             }
         }
         //For lowering hands case
-        else {
-            if (setTo > 0) {
-                this.hands = Array(setTo).fill(new Hand())
+        else if (setTo < this.numOfHands()) {
+            if (setTo > 0) { //wont have not enough bet issue
+                const bankrollReturned = currentTotalBet - totalBankrollNeeded
+                this.updateBankroll(bankrollReturned)
+                this.hands = Array(setTo).fill(new Hand().setBet(minBetPerHand))
             }
             else {
-                Notifier.notify('Can not set hands to lower than 1')
+                Notifier.error('Can not set hands to lower than 1')
             }
+        }
+        //For equal case, usually occurs when player join game
+        else {
+            // console.log({currentTotalBet, totalBankrollNeeded, setTo, minBetPerHand})
+            this.updateBankroll(currentTotalBet) //add back currentTotal
+            this.updateBankroll(-1*totalBankrollNeeded) //take out needed br to bet
+            this.hands = Array(setTo).fill(new Hand().setBet(minBetPerHand))
+            // console.log({hands: this.hands[0].getBet()})
         }
 
         return this
@@ -339,7 +425,15 @@ export default class Player implements PlayerInterface {
     }
 
     getCurrentHand = () => {
-        return this.currentHand
+        return this.hands[this.currentHandIndex]
+    }
+
+    getTotalBetFromAllHands = () => {
+        let sum: number = 0
+        this.hands.forEach((h) => {
+            sum += h.getBet(); 
+        });
+        return sum
     }
 
 }

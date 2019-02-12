@@ -28,7 +28,7 @@ describe('GameController Tests', () => {
     })
 
     it('Can register players', () => {
-        let mcPlayer = new Player(PlayerType.MC)
+        let mcPlayer = new Player(PlayerType.MC).setBankroll(10000)
         let registered = GC.register(mcPlayer)
         mcPlayer.getGameID()
 
@@ -39,11 +39,11 @@ describe('GameController Tests', () => {
 
     it('Can register multiple players', () => {
         let players = [
-            new Player(PlayerType.MC),
-            new Player(PlayerType.MC),
-            new Player(PlayerType.NPC),
-            new Player(PlayerType.NPC),
-            new Player(PlayerType.NPC)
+            new Player(PlayerType.MC).setBankroll(10000),
+            new Player(PlayerType.MC).setBankroll(10000),
+            new Player(PlayerType.NPC).setBankroll(10000),
+            new Player(PlayerType.NPC).setBankroll(10000),
+            new Player(PlayerType.NPC).setBankroll(10000)
         ]
         let resultRegistered = players.map(p => GC.register(p))
         let shouldRegistered = Array(5).fill(true)
@@ -58,11 +58,11 @@ describe('GameController Tests', () => {
 
     it('Can have multiple players join', () => {
         let players = [
-            new Player(PlayerType.MC),
-            new Player(PlayerType.MC),
-            new Player(PlayerType.NPC),
-            new Player(PlayerType.NPC),
-            new Player(PlayerType.NPC)
+            new Player(PlayerType.MC).setBankroll(10000),
+            new Player(PlayerType.MC).setBankroll(10000),
+            new Player(PlayerType.NPC).setBankroll(10000),
+            new Player(PlayerType.NPC).setBankroll(10000),
+            new Player(PlayerType.NPC).setBankroll(10000)
         ]
         let resultRegistered = players.map(p => p.join(GC))
         let shouldRegistered = Array(5).fill(true)
@@ -76,11 +76,11 @@ describe('GameController Tests', () => {
 
     it('Can properly limit player size to 4 hands (1 hand per player)', () => {
 
-        let p = new Player(PlayerType.MC)
-        let a1 = new Player(PlayerType.NPC)
-        let a2 = new Player(PlayerType.NPC)
-        let a3 = new Player(PlayerType.NPC)
-        let a4 = new Player(PlayerType.NPC)
+        let p = new Player(PlayerType.MC).setBankroll(10000)
+        let a1 = new Player(PlayerType.NPC).setBankroll(10000)
+        let a2 = new Player(PlayerType.NPC).setBankroll(10000)
+        let a3 = new Player(PlayerType.NPC).setBankroll(10000)
+        let a4 = new Player(PlayerType.NPC).setBankroll(10000)
 
         p.join(maxFourGC)
         a1.join(maxFourGC)
@@ -95,8 +95,8 @@ describe('GameController Tests', () => {
 
     it('Can properly limit player size to 4 hands (1 player with 4 hands)', () => {
 
-        let p = new Player(PlayerType.MC)
-        let ai = new Player(PlayerType.NPC)
+        let p = new Player(PlayerType.MC).setBankroll(10000)
+        let ai = new Player(PlayerType.NPC).setBankroll(10000)
         
         p.join(maxFourGC)
         p.changeHandTo(4) //need to execute after joining (first join forces hands to be 1)
@@ -111,9 +111,9 @@ describe('GameController Tests', () => {
 
     it('Can properly limit player size to 4 hands (3 hands for mc player, 1 for ai)', () => {
 
-        let p = new Player(PlayerType.MC)
-        let a1 = new Player(PlayerType.NPC)
-        let a2 = new Player(PlayerType.NPC)
+        let p = new Player(PlayerType.MC).setBankroll(10000)
+        let a1 = new Player(PlayerType.NPC).setBankroll(10000)
+        let a2 = new Player(PlayerType.NPC).setBankroll(10000)
         
         p.join(maxFourGC)
         p.changeHandTo(3) //need to execute after joining (first join forces hands to be 1)
@@ -130,17 +130,18 @@ describe('GameController Tests', () => {
 
     it('Does force number of hands to 1 and bet amount to min bet on player join', () => {      
         //WIP - need player change hand tests
-        let p = new Player(PlayerType.MC)
+        let p = new Player(PlayerType.MC).setBankroll(1000)
         p.join(GC)
 
         expect(p.numOfHands()).to.eql(1)
+        console.log(p.getCurrentHand().getBet())
         expect(p.getCurrentHand().getBet()).to.eql(GC.rule.minBet)
     })
 
     it('Can properly process change hand commands from player', () => {
 
-        let p = new Player(PlayerType.MC)
-        let a1 = new Player(PlayerType.NPC)
+        let p = new Player(PlayerType.MC).setBankroll(10000)
+        let a1 = new Player(PlayerType.NPC).setBankroll(10000)
 
         p.join(maxFourGC)
         p.changeHandTo(3).changeHandTo(2)
@@ -153,8 +154,8 @@ describe('GameController Tests', () => {
 
     it('Can prevent invalid change hand commands from player (max)', () => {
 
-        let p = new Player(PlayerType.MC)
-        let a1 = new Player(PlayerType.NPC)
+        let p = new Player(PlayerType.MC).setBankroll(10000)
+        let a1 = new Player(PlayerType.NPC).setBankroll(10000)
 
         p.join(maxFourGC)
         p.changeHandTo(3)
@@ -167,8 +168,8 @@ describe('GameController Tests', () => {
 
     it('Can prevent invalid change hand commands from player (min of 1)', () => {
 
-        let p = new Player(PlayerType.MC)
-        let a1 = new Player(PlayerType.NPC)
+        let p = new Player(PlayerType.MC).setBankroll(10000)
+        let a1 = new Player(PlayerType.NPC).setBankroll(10000)
 
         p.join(maxFourGC)
         p.changeHandTo(3).changeHandTo(-1)

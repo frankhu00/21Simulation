@@ -32,6 +32,7 @@ export interface GameControlDelegator {
     canInsurance: () => boolean
     canSurrender: () => boolean
     deal: () => Card|undefined
+    getMinBetForNumHands: (numHands: number) => number
 }
 export interface GameControl {
     readonly rule: PlayRuleOption
@@ -140,7 +141,7 @@ class GameController implements GameControl, GameControlDelegator {
 
         let openHands = this.getOpenHands()
         if (openHands > 0) {
-            player.setDelegator(this).changeHandTo(1).changeBetTo(this.rule.minBet)
+            player.setDelegator(this).changeHandTo(1) //changeHandTo will auto min bet
             this.addPlayer(player)
             return this.updateTableStatistics(this.players)
         }
@@ -156,6 +157,11 @@ class GameController implements GameControl, GameControlDelegator {
     //Delegation
     getMinBet = () => {
         return this.rule.minBet
+    }
+
+    //Delegation
+    getMinBetForNumHands = (numHands: number) => {
+        return (numHands == 1) ? this.rule.minBet : this.rule.betSizeToNumHands*numHands
     }
 
     //Delegation
@@ -232,7 +238,7 @@ class GameController implements GameControl, GameControlDelegator {
             return show.getKey() == 'A'
         }
         else {
-            Notifier.notify('Dealer has no cards.')
+            Notifier.error('Dealer has no cards.')
             return false
         }
     }

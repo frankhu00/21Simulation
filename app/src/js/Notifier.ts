@@ -6,7 +6,8 @@ class NotificationSystem {
     }
 
     error(msg: string) {
-        console.error(msg)
+        // console.error(msg)
+        //throw error
         return
     }
 

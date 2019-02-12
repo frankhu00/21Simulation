@@ -1,7 +1,7 @@
 import Card from "./card";
 import { uniqueFilter } from './Utility';
 import Notifier from "./Notifier";
-import CardCollection, { CardCollectionInterface } from "./CardCollection";
+import { CardCollectionInterface } from "./CardCollection";
 
 export interface CountingSystemInterface {
     tc: number;

@@ -73,6 +73,7 @@ class Hand implements PlayingHand {
         }
         else {
             this.isEmptyHand = true;
+            this.bet = 0
         }
     }
 

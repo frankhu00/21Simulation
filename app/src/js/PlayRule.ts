@@ -9,7 +9,7 @@ const defaultRules: PlayRuleOption = {
     maxSplitAceNum: 2,
     minBet: 50,
     maxBet: 5000,
-    betSizeToNumHands: 50, //1 hand = 1*50, 2 hands = 2*50, 3 hands = 3*50
+    betSizeToNumHands: 50, //1 hand = minBet per hand, 2 hands = 2*betSizeToNumHands per hand, 3 hands = 3*betSizeToNumHands per hand, so on
     acePayout: 1.5,
     surrender: false
 }
