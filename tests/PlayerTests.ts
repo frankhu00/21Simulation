@@ -99,13 +99,13 @@ describe('Player Class Tests', () => {
         const initBR = p.getBankroll()
         p.join(dummyGC)
         let oneHandBR = p.getBankroll()
-        // let fiveHandBR = p.changeHandTo(5).getBankroll()
-        // let threeHandBR = p.changeHandTo(3).getBankroll()
+        let fiveHandBR = p.changeHandTo(5).getBankroll()
+        let threeHandBR = p.changeHandTo(3).getBankroll()
 
         expect(initBR).to.eqls(br)
         expect(oneHandBR).to.eqls( br - minBet)
-        // expect(fiveHandBR).to.eqls( br - (betSizeToNumHands*5)*5)
-        // expect(threeHandBR).to.eqls(br - (betSizeToNumHands*3)*3)
+        expect(fiveHandBR).to.eqls( br - (betSizeToNumHands*5)*5)
+        expect(threeHandBR).to.eqls(br - (betSizeToNumHands*3)*3)
     })
 
 

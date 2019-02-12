@@ -387,11 +387,9 @@ export default class Player implements PlayerInterface {
         }
         //For equal case, usually occurs when player join game
         else {
-            // console.log({currentTotalBet, totalBankrollNeeded, setTo, minBetPerHand})
             this.updateBankroll(currentTotalBet) //add back currentTotal
             this.updateBankroll(-1*totalBankrollNeeded) //take out needed br to bet
             this.hands = Array(setTo).fill(new Hand().setBet(minBetPerHand))
-            // console.log({hands: this.hands[0].getBet()})
         }
 
         return this

@@ -134,7 +134,6 @@ describe('GameController Tests', () => {
         p.join(GC)
 
         expect(p.numOfHands()).to.eql(1)
-        console.log(p.getCurrentHand().getBet())
         expect(p.getCurrentHand().getBet()).to.eql(GC.rule.minBet)
     })
 
