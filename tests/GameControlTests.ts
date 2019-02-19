@@ -29,7 +29,7 @@ describe('GameController Tests', () => {
 
     it('Can register players', () => {
         let mcPlayer = new Player(PlayerType.MC).setBankroll(10000)
-        let registered = GC.register(mcPlayer)
+        let registered = GC.delegator.register(mcPlayer)
         mcPlayer.getGameID()
 
         expect(registered).to.eql(true)
@@ -45,7 +45,7 @@ describe('GameController Tests', () => {
             new Player(PlayerType.NPC).setBankroll(10000),
             new Player(PlayerType.NPC).setBankroll(10000)
         ]
-        let resultRegistered = players.map(p => GC.register(p))
+        let resultRegistered = players.map(p => GC.delegator.register(p))
         let shouldRegistered = Array(5).fill(true)
 
         let resultGID = players.map(p => p.getGameID())
@@ -64,7 +64,7 @@ describe('GameController Tests', () => {
             new Player(PlayerType.NPC).setBankroll(10000),
             new Player(PlayerType.NPC).setBankroll(10000)
         ]
-        let resultRegistered = players.map(p => p.join(GC))
+        let resultRegistered = players.map(p => p.join(GC.delegator))
         let shouldRegistered = Array(5).fill(true)
 
         let resultGID = players.map(p => p.getGameID())
@@ -82,13 +82,13 @@ describe('GameController Tests', () => {
         let a3 = new Player(PlayerType.NPC).setBankroll(10000)
         let a4 = new Player(PlayerType.NPC).setBankroll(10000)
 
-        p.join(maxFourGC)
-        a1.join(maxFourGC)
-        a2.join(maxFourGC)
-        a3.join(maxFourGC)
+        p.join(maxFourGC.delegator)
+        a1.join(maxFourGC.delegator)
+        a2.join(maxFourGC.delegator)
+        a3.join(maxFourGC.delegator)
 
         //This should fail to join
-        let didFifthPlayerJoin = a4.join(maxFourGC)
+        let didFifthPlayerJoin = a4.join(maxFourGC.delegator)
         expect(didFifthPlayerJoin).to.eqls(false)
         expect(maxFourGC.getTotalPlayers()).to.eqls(4)
     })
@@ -98,10 +98,10 @@ describe('GameController Tests', () => {
         let p = new Player(PlayerType.MC).setBankroll(10000)
         let ai = new Player(PlayerType.NPC).setBankroll(10000)
         
-        p.join(maxFourGC)
+        p.join(maxFourGC.delegator)
         p.changeHandTo(4) //need to execute after joining (first join forces hands to be 1)
 
-        let didJoin = ai.join(maxFourGC)
+        let didJoin = ai.join(maxFourGC.delegator)
 
         //This should fail to join
         expect(didJoin).to.eqls(false)
@@ -115,12 +115,12 @@ describe('GameController Tests', () => {
         let a1 = new Player(PlayerType.NPC).setBankroll(10000)
         let a2 = new Player(PlayerType.NPC).setBankroll(10000)
         
-        p.join(maxFourGC)
+        p.join(maxFourGC.delegator)
         p.changeHandTo(3) //need to execute after joining (first join forces hands to be 1)
-        a1.join(maxFourGC)
+        a1.join(maxFourGC.delegator)
         a1.changeHandTo(1) //need to execute after joining (first join forces hands to be 1)
 
-        let didJoin = a2.join(maxFourGC)
+        let didJoin = a2.join(maxFourGC.delegator)
 
         //This should fail to join
         expect(didJoin).to.eqls(false)
@@ -131,7 +131,7 @@ describe('GameController Tests', () => {
     it('Does force number of hands to 1 and bet amount to min bet on player join', () => {      
         //WIP - need player change hand tests
         let p = new Player(PlayerType.MC).setBankroll(1000)
-        p.join(GC)
+        p.join(GC.delegator)
 
         expect(p.numOfHands()).to.eql(1)
         expect(p.getCurrentHand().getBet()).to.eql(GC.rule.minBet)
@@ -142,9 +142,9 @@ describe('GameController Tests', () => {
         let p = new Player(PlayerType.MC).setBankroll(10000)
         let a1 = new Player(PlayerType.NPC).setBankroll(10000)
 
-        p.join(maxFourGC)
+        p.join(maxFourGC.delegator)
         p.changeHandTo(3).changeHandTo(2)
-        a1.join(maxFourGC)
+        a1.join(maxFourGC.delegator)
         a1.changeHandTo(2) 
 
         expect(maxFourGC.players[0].numOfHands()).to.eqls(2) //for player p
@@ -156,9 +156,9 @@ describe('GameController Tests', () => {
         let p = new Player(PlayerType.MC).setBankroll(10000)
         let a1 = new Player(PlayerType.NPC).setBankroll(10000)
 
-        p.join(maxFourGC)
+        p.join(maxFourGC.delegator)
         p.changeHandTo(3)
-        a1.join(maxFourGC)
+        a1.join(maxFourGC.delegator)
         a1.changeHandTo(2) //should be invalid so numOfHands should still be 1
 
         expect(maxFourGC.players[0].numOfHands()).to.eqls(3) //for player p
@@ -170,9 +170,9 @@ describe('GameController Tests', () => {
         let p = new Player(PlayerType.MC).setBankroll(10000)
         let a1 = new Player(PlayerType.NPC).setBankroll(10000)
 
-        p.join(maxFourGC)
+        p.join(maxFourGC.delegator)
         p.changeHandTo(3).changeHandTo(-1)
-        a1.join(maxFourGC)
+        a1.join(maxFourGC.delegator)
         a1.changeHandTo(0) //should be invalid so numOfHands should still be 1
 
         expect(maxFourGC.players[0].numOfHands()).to.eqls(3) //for player p
@@ -192,25 +192,25 @@ describe('GameController Tests', () => {
         const h3 = new Hand(new Card('2'), 50).dealSecondCard(new Card('2')) //value: 4
         const h4 = new Hand(new Card('A'), 50).dealSecondCard(new Card('A')) //value: 2, 12
 
-        const gc_h1 = gc.canDoubleDown(h1) //true
-        const gc_h2 = gc.canDoubleDown(h2) //true
-        const gc_h3 = gc.canDoubleDown(h3) //true
-        const gc_h4 = gc.canDoubleDown(h4) //true 
+        const gc_h1 = gc.delegator.canDoubleDown(h1) //true
+        const gc_h2 = gc.delegator.canDoubleDown(h2) //true
+        const gc_h3 = gc.delegator.canDoubleDown(h3) //true
+        const gc_h4 = gc.delegator.canDoubleDown(h4) //true 
 
-        const gc1_h1 = gc1.canDoubleDown(h1) //true
-        const gc1_h2 = gc1.canDoubleDown(h2) //false
-        const gc1_h3 = gc1.canDoubleDown(h3) //false
-        const gc1_h4 = gc1.canDoubleDown(h4) //false
+        const gc1_h1 = gc1.delegator.canDoubleDown(h1) //true
+        const gc1_h2 = gc1.delegator.canDoubleDown(h2) //false
+        const gc1_h3 = gc1.delegator.canDoubleDown(h3) //false
+        const gc1_h4 = gc1.delegator.canDoubleDown(h4) //false
 
-        const gc2_h1 = gc2.canDoubleDown(h1) //false
-        const gc2_h2 = gc2.canDoubleDown(h2) //true
-        const gc2_h3 = gc2.canDoubleDown(h3) //false
-        const gc2_h4 = gc2.canDoubleDown(h4) //true
+        const gc2_h1 = gc2.delegator.canDoubleDown(h1) //false
+        const gc2_h2 = gc2.delegator.canDoubleDown(h2) //true
+        const gc2_h3 = gc2.delegator.canDoubleDown(h3) //false
+        const gc2_h4 = gc2.delegator.canDoubleDown(h4) //true
 
-        const gc3_h1 = gc3.canDoubleDown(h1) //false
-        const gc3_h2 = gc3.canDoubleDown(h2) //false
-        const gc3_h3 = gc3.canDoubleDown(h3) //false
-        const gc3_h4 = gc3.canDoubleDown(h4) //false
+        const gc3_h1 = gc3.delegator.canDoubleDown(h1) //false
+        const gc3_h2 = gc3.delegator.canDoubleDown(h2) //false
+        const gc3_h3 = gc3.delegator.canDoubleDown(h3) //false
+        const gc3_h4 = gc3.delegator.canDoubleDown(h4) //false
 
         expect(gc_h1).to.eqls(true);
         expect(gc_h2).to.eqls(true);
