@@ -36,9 +36,9 @@ export interface PlayerInterface {
     insurance: () => PlayerInterface
     surrender: () => PlayerInterface
 
-    //this is stay
+    //this is finish current hand and move to next hand / player
     completeCurrentHand: () => void
-    next: () => void
+    // next: () => void
 
     changeBetBy: (chane: number) => PlayerInterface
     changeBetTo: (setTo: number) => PlayerInterface
@@ -47,14 +47,20 @@ export interface PlayerInterface {
     addHand: (change: number) => PlayerInterface
     removeHand: (change: number) => PlayerInterface
     numOfHands: () => number
-    join: (game: GameControlDelegator) => boolean
+    join: (game: GameControlDelegator, pos?: number) => boolean
     leave: () => boolean
     getType: () => PlayerType
     getGameID: () => string
     getCurrentHand: () => PlayingHand
     getTotalBetFromAllHands: () => number
     setDelegator: (delegator: GameControlDelegator) => PlayerInterface
+    getPosition: () => number
+    setPosition: (pos: number) => PlayerInterface
     //Need change position
+
+    startHand: () => PlayerInterface
+    hasNextHand: () => boolean
+    toNextHand: () => PlayerInterface
 }
 
 //Should use this as base and extend into Dealer class and Player/NPC class
@@ -68,6 +74,7 @@ export default class Player implements PlayerInterface {
     private hands: PlayingHand[]
     private type: PlayerType
     private delegator?: GameControlDelegator
+    private position: number = -99 //this is used as an identifier for players in GameController / GameDelegator
 
     constructor(type: PlayerType = PlayerType.NPC, delegator?: GameControlDelegator, hands?: PlayingHand[], bankroll?: number) {
         this.type = type
@@ -80,7 +87,6 @@ export default class Player implements PlayerInterface {
             this.active = false
         }
         this.currentHandIndex = 0
-        // this.numHands = this.hands.length
 
         if (bankroll) {
             this.setBankroll(bankroll)
@@ -92,22 +98,23 @@ export default class Player implements PlayerInterface {
         }
     }
 
-    next: () => void = () => {
-        if (this.delegator) {
-            this.delegator.next()
-        }
-        else {
-            Notifier.error('Player has not joined any game!')
-        }
+    startHand = () => {
+        //Control logic
+        return this
     }
 
-    join = (game: GameControlDelegator) => {
+    toNextHand = () => {
+        this.currentHandIndex++
+        return this
+    }
+
+    join = (game: GameControlDelegator, pos?: number) => {
         if (this.delegator) {
             Notifier.error(`Player (${PlayerType[this.getType()]}) is already in a game!`)
             return false
         }
 
-        if (game.register(this)) {
+        if (game.register(this, pos)) {
             Notifier.notify(`Player (${PlayerType[this.getType()]}) Joined Successfully!`)
             this.delegator = game
             return true
@@ -182,21 +189,21 @@ export default class Player implements PlayerInterface {
     }
 
     canSplit: () => boolean = () => {
-        if (this.delegator) {
+        if (this.delegator && this.hasEnoughBankroll(this.getCurrentHand().getBet())) {
             return this.delegator.canSplit(this.getCurrentHand())
         }
         return false
     }
 
     canDoubleDown: () => boolean = () => {
-        if (this.delegator) {
+        if (this.delegator && this.hasEnoughBankroll(this.getCurrentHand().getBet())) {
             return this.delegator.canDoubleDown(this.getCurrentHand())
         }
         return false
     }
     
     canInsurance: () => boolean = () => {
-        if (this.delegator) {
+        if (this.delegator && this.hasEnoughBankroll( this.getCurrentHand().getBet() / 2) ) {
             return this.delegator.canInsurance()
         }
         return false
@@ -285,8 +292,12 @@ export default class Player implements PlayerInterface {
     }
 
     completeCurrentHand: () => void = () => {
-        this.currentHandIndex++;
-
+        if (this.delegator) {
+            this.delegator.next(this)
+        }
+        else {
+            Notifier.error('Player has not joined any game!')
+        }
     }
 
     betToMin = () => {
@@ -415,7 +426,7 @@ export default class Player implements PlayerInterface {
 
     getGameID = () => {
         if (this.delegator) {
-            return this.delegator.gid
+            return this.delegator.getGameID()
         }
         else {
             return 'No game id found'
@@ -426,12 +437,30 @@ export default class Player implements PlayerInterface {
         return this.hands[this.currentHandIndex]
     }
 
+    getHands = () => {
+        return this.hands
+    }
+
+    hasNextHand = () => {
+        return (typeof this.getHands()[this.currentHandIndex+1] != 'undefined')
+    }
+
     getTotalBetFromAllHands = () => {
         let sum: number = 0
         this.hands.forEach((h) => {
             sum += h.getBet(); 
         });
         return sum
+    }
+
+    getPosition = () => {
+        return this.position
+    }
+
+    setPosition = (pos: number) => {
+        this.position = pos
+        return this
+
     }
 
 }
