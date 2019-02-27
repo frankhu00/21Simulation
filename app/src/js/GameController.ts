@@ -20,21 +20,26 @@ export interface GameControl {
     // readonly rule: PlayRuleOption
     // readonly config: GameConfiguration
     delegator: GameControlDelegator
-    flowOrder: GameFlowInterface[]
     players: PlayerInterface[]
     gid: string
-    init: (players?: PlayerInterface[]) => boolean 
+    // init: (players?: PlayerInterface[]) => boolean 
     getTotalHands: (players: PlayerInterface[]) => number
     getTotalPlayers: () => number
-    addPlayer: (player: PlayerInterface) => void
+    getFlowOrder: () => GameFlowInterface[]
+    updateFlowOrder: (byPos: number, withPlayer: PlayerInterface) => GameControl
+    getValidFlowOrder: () => GameFlowInterface[]
+    getEmptyPositions: () => GameFlowInterface[]
+    getNextOpenPosition: () => number | null
+    addPlayer: (player: PlayerInterface, pos: number) => void
     removePlayer: (player: PlayerInterface) => void
-    updateTableStatistics: (players: PlayerInterface[]) => boolean
-    assignPosition: (players: PlayerInterface[]) => GameControl
+    // assignPosition: (players: PlayerInterface[]) => GameControl
     getShoe: () => CardCollectionInterface
     getRules: () => PlayRuleOption
     getConfig: () => GameConfiguration
     getPlayers: () => PlayerInterface[]
     getDealer: () => PlayerInterface
+    isPositionEmpty: (pos: number) => boolean
+    checkHandRestrictions: (players: PlayerInterface[]) => boolean
 }
 
 class GameController implements GameControl {
@@ -45,7 +50,7 @@ class GameController implements GameControl {
     readonly config: GameConfiguration = defaultConfig
     readonly dealer: PlayerInterface = new Player(PlayerType.Dealer)
     readonly shoe: CardCollectionInterface
-    public flowOrder: GameFlowInterface[]
+    private flowOrder: GameFlowInterface[]
 
     public players: PlayerInterface[] = []
     private shoeInProgress: boolean = false
@@ -74,22 +79,51 @@ class GameController implements GameControl {
         this.flowOrder.push(dealerFlow)
     }
 
-    init: (players?: PlayerInterface[]) => boolean = (players?: PlayerInterface[]) => {
-        this.shoeInProgress = false
-        if (players) {
-            return this.updateTableStatistics(players)
-        }
-        return true
+    // init: (players?: PlayerInterface[]) => boolean = (players?: PlayerInterface[]) => {
+    //     this.shoeInProgress = false
+    //     if (players) {
+    //         return this.checkHandRestrictions(players)
+    //     }
+    //     return true
+    // }
+
+    getFlowOrder = () => {
+        return this.flowOrder
     }
 
-    assignPosition = (players: PlayerInterface[]) => {
-        this.flowOrder.forEach( (order, ind) => {
-            //Just fill the flow order in order of players for now
-            if (players[ind]) {
-                order.player = players[ind]
-            }
-        })
+    updateFlowOrder = (byPos: number, withPlayer: PlayerInterface) => {
+        if (byPos < 0) {
+            Notifier.error('Cannot update dealer position!')
+            return this
+        }
+        else {
+            this.getFlowOrder()[byPos].player = withPlayer
+        }
         return this
+    }
+
+    isPositionEmpty = (pos: number) => {
+        return typeof this.getFlowOrder()[pos].player == 'undefined'
+    }
+
+    //Returns the flowOrder obj with valid players
+    getValidFlowOrder = () => {
+        return this.getFlowOrder().filter( fo => typeof fo.player != 'undefined')
+    }
+
+    getEmptyPositions = () => {
+        return this.getFlowOrder().filter(fo => typeof fo.player == 'undefined')
+    }
+
+    //Returns the next avail position, returns null if non are open
+    getNextOpenPosition = () => {
+        let openPos = this.getEmptyPositions()
+        if (openPos.length > 0) {
+            return openPos[0].position
+        }
+        else {
+            return null
+        }
     }
 
     //Deals the starting hands to each player
@@ -98,7 +132,7 @@ class GameController implements GameControl {
         return this
     }
 
-    updateTableStatistics = (players: PlayerInterface[]) => {
+    checkHandRestrictions = (players: PlayerInterface[]) => {
         let { tableMaxHands } = this.config
         let initNumHands = this.getTotalHands(players)
         if (initNumHands > tableMaxHands) {
@@ -110,11 +144,6 @@ class GameController implements GameControl {
             return false
         }
 
-        this.players = players
-        // this.totalHands = initNumHands
-        // this.totalPlayers = players.length
-
-        this.assignPosition(players)
         return true
     }
 
@@ -150,7 +179,9 @@ class GameController implements GameControl {
         this.shoeInProgress = true
     }
 
-    addPlayer = (player: PlayerInterface) => {
+    addPlayer = (player: PlayerInterface, pos: number) => {
+        //At this point, all condition to add player passed
+        this.updateFlowOrder(pos, player)
         this.players.push(player)
     }
 
@@ -192,6 +223,7 @@ export interface GameControlDelegator {
     deal: () => Card|undefined
     getMinBetForNumHands: (numHands: number) => number
     getGameID: () => string
+    getPlayerPosition: (player: PlayerInterface) => number | null
 }
 
 //Separated delegation methods from controller
@@ -242,19 +274,26 @@ class GameDelegator implements GameControlDelegator {
         if (player.getType() == PlayerType.Dealer) {
             return false
         }
-
+        
         let openHands = this.getOpenHands()
         if (openHands > 0) {
-            if (!pos) {
-                player.setDelegator(this).changeHandTo(1) //changeHandTo will auto min bet
-                this.controller.addPlayer(player)
-                return this.controller.updateTableStatistics(this.controller.getPlayers())
+            
+            let position = (typeof pos != 'undefined') ? pos : this.controller.getNextOpenPosition()
+            if (position != null) {
+                if (this.controller.isPositionEmpty(position)) {
+                    player.setDelegator(this).changeHandTo(1) //changeHandTo will auto min bet
+                    this.controller.addPlayer(player, position)
+                    return true
+                }
+                else {
+                    Notifier.error(`Position ${pos} is already occupied!`)
+                    return false
+                }
             }
             else {
-                //WIP
+                Notifier.error('There are no more open positions!')
                 return false
             }
-            
         }
         
         return false
@@ -277,6 +316,16 @@ class GameDelegator implements GameControlDelegator {
     }
 
     getDealerShowingCard = () => this.controller.getDealer().getCurrentHand().getFirstCard()
+
+    getPlayerPosition = (player: PlayerInterface) => {
+        let match = this.controller.getFlowOrder().filter(fo => fo.player == player)
+        if (match.length > 0) {
+            return match[0].position
+        }
+        else {
+            return null
+        }
+    }
 
     canSplit = (withHand: PlayingHand) => {
         const firstCard = withHand.getFirstCard()

@@ -4,8 +4,9 @@ import sinon from 'sinon'
 
 import Player , { PlayerType } from '../app/src/js/Player'
 import GameController from '../app/src/js/GameController'
-import { CardCollectionInterface, Deck } from '../app/src/js/CardCollection';
+import { CardCollectionInterface, Deck } from '../app/src/js/CardCollection'
 import PlayRule from '../app/src/js/PlayRule'
+import { randomizeBetween } from '../app/src/js/Utility'
 
 describe('Player Class Tests', () => {
 
@@ -162,7 +163,21 @@ describe('Player Class Tests', () => {
         })
 
         it('Can join game at specified positions', () => {
+            let p = new Player(PlayerType.MC).setBankroll(10000)
+            let pos = randomizeBetween(1, 5)
+            p.join(GC.delegator, pos) //join at random position (exclude 0 since thats normal behavior)
+            let actual = p.getPosition()
 
+            expect(actual).to.eqls(pos)
+        })
+
+        it('Cannot join game at occupied positions', () => {
+            // let p = new Player(PlayerType.MC).setBankroll(10000)
+            // let pos = randomizeBetween(1, 5)
+            // p.join(GC.delegator, pos) //join at random position (exclude 0 since thats normal behavior)
+            // let actual = p.getPosition()
+
+            // expect(actual).to.eqls(pos)
         })
 
     })

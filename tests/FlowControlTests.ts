@@ -38,12 +38,41 @@ describe('Flow Control Tests', () => {
                 player: p,
                 position: 0,
                 order: 0
-            }
-        ]
+            },
+            {
+                player: ai,
+                position: 1,
+                order: 1
+            },
+            {
+                player: ai2,
+                position: 2,
+                order: 2
+            },
+            {
+                player: ai3,
+                position: 3,
+                order: 3
+            },
+            {
+                player: undefined,
+                position: 4,
+                order: 4
+            },
+            {
+                player: undefined,
+                position: 5,
+                order: 5
+            },
+            {
+                player: GC.getDealer(),
+                position: -1,
+                order: -1
+            },
+        ];
+        const actual = GC.getFlowOrder()
 
-
+        expect(actual).to.eql(should)
     })
-
-
 
 })

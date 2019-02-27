@@ -54,10 +54,7 @@ export interface PlayerInterface {
     getCurrentHand: () => PlayingHand
     getTotalBetFromAllHands: () => number
     setDelegator: (delegator: GameControlDelegator) => PlayerInterface
-    getPosition: () => number
-    setPosition: (pos: number) => PlayerInterface
-    //Need change position
-
+    getPosition: () => number | null
     startHand: () => PlayerInterface
     hasNextHand: () => boolean
     toNextHand: () => PlayerInterface
@@ -74,7 +71,6 @@ export default class Player implements PlayerInterface {
     private hands: PlayingHand[]
     private type: PlayerType
     private delegator?: GameControlDelegator
-    private position: number = -99 //this is used as an identifier for players in GameController / GameDelegator
 
     constructor(type: PlayerType = PlayerType.NPC, delegator?: GameControlDelegator, hands?: PlayingHand[], bankroll?: number) {
         this.type = type
@@ -453,14 +449,8 @@ export default class Player implements PlayerInterface {
         return sum
     }
 
-    getPosition = () => {
-        return this.position
-    }
-
-    setPosition = (pos: number) => {
-        this.position = pos
-        return this
-
+    getPosition: () => number | null  = () => {
+        return this.delegator ? this.delegator.getPlayerPosition(this) : null
     }
 
 }
