@@ -6,9 +6,10 @@ import defaultConfig, { GameConfiguration } from './GameConfig'
 import Player, { PlayerInterface, PlayerType } from './Player'
 
 import Notifier from './Notifier'
+import { Statistics, Tracker } from './Statistics'
 import { PlayingHand } from './Hand';
 import Card from './Card';
-import { CardCollectionInterface } from './CardCollection';
+import CardCollection, { CardCollectionInterface } from './CardCollection';
 
 export interface GameFlowInterface {
     order: number,
@@ -20,46 +21,65 @@ export interface GameControl {
     // readonly rule: PlayRuleOption
     // readonly config: GameConfiguration
     delegator: GameControlDelegator
-    players: PlayerInterface[]
     gid: string
-    // init: (players?: PlayerInterface[]) => boolean 
-    getTotalHands: (players: PlayerInterface[]) => number
-    getTotalPlayers: () => number
-    getFlowOrder: () => GameFlowInterface[]
-    updateFlowOrder: (byPos: number, withPlayer: PlayerInterface) => GameControl
-    getValidFlowOrder: () => GameFlowInterface[]
-    getEmptyPositions: () => GameFlowInterface[]
-    getNextOpenPosition: () => number | null
-    addPlayer: (player: PlayerInterface, pos: number) => void
-    removePlayer: (player: PlayerInterface) => void
-    // assignPosition: (players: PlayerInterface[]) => GameControl
-    getShoe: () => CardCollectionInterface
+
+    //Table related
     getRules: () => PlayRuleOption
     getConfig: () => GameConfiguration
-    getPlayers: () => PlayerInterface[]
     getDealer: () => PlayerInterface
     isPositionEmpty: (pos: number) => boolean
+    getNextOpenPosition: () => number | null
+    getEmptyPositions: () => GameFlowInterface[]
+
+    //Player related
+    getTotalHands: (players: PlayerInterface[]) => number
+    getTotalPlayers: () => number
+    addPlayer: (player: PlayerInterface, pos: number) => void
+    removePlayer: (player: PlayerInterface) => void
+    getPlayers: () => PlayerInterface[]
     checkHandRestrictions: (players: PlayerInterface[]) => boolean
+
+    //Flow Control related
+    isGameStarted: () => boolean
+    getFlowOrder: () => GameFlowInterface[]
+    updateFlowOrder: (byPos: number, withPlayer: PlayerInterface) => GameControl
+    getPlayerFlowOrder: () => GameFlowInterface[]
+    startGame: (withShoe?: CardCollectionInterface) => boolean
+    stopGame: () => GameControl
+
+    //Shoe related
+    getShoe: () => CardCollectionInterface
+    getDealtBin: () => CardCollectionInterface
+    burnCard: (amt: number) => GameControl
+    cleanup: (withShoe?: CardCollectionInterface) => GameControl
+    shuffle: () => GameControl
+    dealRound: () => GameControl
+    
 }
 
 class GameController implements GameControl {
     
     public gid: string
     public delegator: GameControlDelegator = new GameDelegator(this)
-    readonly rule: PlayRuleOption = defaultRules
-    readonly config: GameConfiguration = defaultConfig
-    readonly dealer: PlayerInterface = new Player(PlayerType.Dealer)
-    readonly shoe: CardCollectionInterface
+    private rule: PlayRuleOption = defaultRules
+    private config: GameConfiguration = defaultConfig
+    private dealer: PlayerInterface = new Player(PlayerType.Dealer)
+    private shoe: CardCollectionInterface
+    private backupShoe: CardCollectionInterface //this is a clone of shoe, used when resetting
+    private dealtCards: CardCollectionInterface //the card pile thats used
     private flowOrder: GameFlowInterface[]
 
-    public players: PlayerInterface[] = []
+    private players: PlayerInterface[] = []
     private shoeInProgress: boolean = false
+    private tracker: Tracker = new Statistics()
 
     constructor(shoe: CardCollectionInterface, id: string = 'GameController', rule: PlayRuleOption = defaultRules, config: GameConfiguration = defaultConfig) {
         this.gid = id
         this.rule = rule
         this.config = config
         this.shoe = shoe
+        this.backupShoe = shoe.clone()
+        this.dealtCards = new CardCollection()
 
         this.flowOrder = [...Array(this.config.tableMaxHands)].map((_, i) => {
             const gameFlow : GameFlowInterface = {
@@ -79,13 +99,127 @@ class GameController implements GameControl {
         this.flowOrder.push(dealerFlow)
     }
 
-    // init: (players?: PlayerInterface[]) => boolean = (players?: PlayerInterface[]) => {
-    //     this.shoeInProgress = false
-    //     if (players) {
-    //         return this.checkHandRestrictions(players)
-    //     }
-    //     return true
-    // }
+
+    isGameStarted = () => this.shoeInProgress
+
+    cleanup = (withShoe?: CardCollectionInterface) => {
+        //clean up prev shoe stuff
+        if (withShoe) { //use new shoe
+            this.shoe = withShoe
+            this.backupShoe = withShoe.clone()
+        }
+        else {
+            this.shoe = this.backupShoe.clone() //or reuse current shoe and just shuffle it
+        }
+
+        this.dealtCards = new CardCollection()
+        this.shoeInProgress = false
+        return this
+    }
+
+    startGame = (withShoe?: CardCollectionInterface) => {
+        this.cleanup(withShoe)
+            .shuffle()
+            .burnCard()
+
+        return this.isGameStarted()
+    }
+
+    stopGame = () => {
+        this.cleanup()
+        this.shoeInProgress = false
+        return this
+    }
+
+    shuffle = () => {
+        this.getShoe().shuffle(this.config.shuffleRepeats)
+        return this
+    }
+
+    burnCard = (amt: number = 1) => {
+        let burnCards: Card[] = [];
+        let err: boolean = false
+        for(let i=0; i < amt; i++) {
+            let dealtCard = this.getShoe().deal()
+            if (dealtCard) {
+                burnCards.push(dealtCard)
+            }
+            else {
+                Notifier.error('No cards dealt. Cannot burn card. Start game failed')
+                err = true
+                break
+            }
+        }
+
+        this.getDealtBin().addCard(burnCards)
+        this.shoeInProgress = !err
+        return this
+    }
+
+    dealRound = () => {
+        if (!this.isGameStarted()) {
+            Notifier.error('Game did not start yet')
+            return this
+        }
+
+        //Dealing first card
+        let firstDealPassed = this.dealLoop(true)
+        if (firstDealPassed) {
+            //Dealing second card
+            this.dealLoop(false)
+        }
+    
+        return this
+    }
+
+    //Not in interface, only used when dealing the initial hand cards
+    private dealHandCardsTo = (player: PlayerInterface, first: boolean) => {
+        //NEED TO TAKE CARE OF OTHER PLAYER HANDS HERE
+        return this.checkDealtCard(this.getShoe().deal(), (card: Card) => {
+            if (first) {
+                player.getCurrentHand().dealFirstCard(card)
+            }
+            else {
+                player.getCurrentHand().dealSecondCard(card)
+            }
+            return true
+        }, () => {
+            this.stopGame()
+            return false
+        })
+    }
+
+    //Not in the interface
+    private dealLoop = (first: boolean) => {
+        let dealSuccessfully: boolean = false
+        for(let i=0; this.getPlayerFlowOrder().length; i++) {
+            let p = this.getPlayerFlowOrder()[i].player!; //this.getPlayerFlowOrder ensures theres valid player
+            dealSuccessfully = this.dealHandCardsTo(p, first)
+            if(!dealSuccessfully) {
+                break;
+            }
+        }
+
+        if (!dealSuccessfully) {
+            return false
+        }
+
+        //Deal dealer card, returns if dealer is successfully dealt a card or not
+        return this.dealHandCardsTo(this.getDealer(), first)
+    }
+
+    //not in interface
+    private checkDealtCard = (card: Card|undefined, passFn: Function, failFn?: Function ) => {
+        if (card) {
+            return passFn(card)
+        }
+        else {
+            Notifier.error('Ran out of cards during game. Auto stopped')
+            if (failFn) {
+                return failFn()
+            }
+        }
+    }
 
     getFlowOrder = () => {
         return this.flowOrder
@@ -106,9 +240,9 @@ class GameController implements GameControl {
         return typeof this.getFlowOrder()[pos].player == 'undefined'
     }
 
-    //Returns the flowOrder obj with valid players
-    getValidFlowOrder = () => {
-        return this.getFlowOrder().filter( fo => typeof fo.player != 'undefined')
+    //Returns the flowOrder obj with valid players (Dealer excluded)
+    getPlayerFlowOrder = () => {
+        return this.getFlowOrder().filter( fo => typeof fo.player != 'undefined' && fo.player.getType() != PlayerType.Dealer)
     }
 
     getEmptyPositions = () => {
@@ -124,12 +258,6 @@ class GameController implements GameControl {
         else {
             return null
         }
-    }
-
-    //Deals the starting hands to each player
-    dealRound() {
-        // this.get
-        return this
     }
 
     checkHandRestrictions = (players: PlayerInterface[]) => {
@@ -175,10 +303,6 @@ class GameController implements GameControl {
         return players.every( p => this.checkHandsPerPlayer(p) )
     }
 
-    startShoe: () => void = () => {
-        this.shoeInProgress = true
-    }
-
     addPlayer = (player: PlayerInterface, pos: number) => {
         //At this point, all condition to add player passed
         this.updateFlowOrder(pos, player)
@@ -191,6 +315,10 @@ class GameController implements GameControl {
 
     getShoe = () => {
         return this.shoe
+    }
+
+    getDealtBin = () => {
+        return this.dealtCards
     }
 
     getRules = () => {

@@ -134,7 +134,7 @@ describe('GameController Tests', () => {
         p.join(GC.delegator)
 
         expect(p.numOfHands()).to.eql(1)
-        expect(p.getCurrentHand().getBet()).to.eql(GC.rule.minBet)
+        expect(p.getCurrentHand().getBet()).to.eql(GC.getRules().minBet)
     })
 
     it('Can properly process change hand commands from player', () => {
@@ -147,8 +147,8 @@ describe('GameController Tests', () => {
         a1.join(maxFourGC.delegator)
         a1.changeHandTo(2) 
 
-        expect(maxFourGC.players[0].numOfHands()).to.eqls(2) //for player p
-        expect(maxFourGC.players[1].numOfHands()).to.eqls(2) //for player a1
+        expect(maxFourGC.getPlayers()[0].numOfHands()).to.eqls(2) //for player p
+        expect(maxFourGC.getPlayers()[1].numOfHands()).to.eqls(2) //for player a1
     })
 
     it('Can prevent invalid change hand commands from player (max)', () => {
@@ -161,8 +161,8 @@ describe('GameController Tests', () => {
         a1.join(maxFourGC.delegator)
         a1.changeHandTo(2) //should be invalid so numOfHands should still be 1
 
-        expect(maxFourGC.players[0].numOfHands()).to.eqls(3) //for player p
-        expect(maxFourGC.players[1].numOfHands()).to.eqls(1) //for player a1
+        expect(maxFourGC.getPlayers()[0].numOfHands()).to.eqls(3) //for player p
+        expect(maxFourGC.getPlayers()[1].numOfHands()).to.eqls(1) //for player a1
     })
 
     it('Can prevent invalid change hand commands from player (min of 1)', () => {
@@ -175,8 +175,8 @@ describe('GameController Tests', () => {
         a1.join(maxFourGC.delegator)
         a1.changeHandTo(0) //should be invalid so numOfHands should still be 1
 
-        expect(maxFourGC.players[0].numOfHands()).to.eqls(3) //for player p
-        expect(maxFourGC.players[1].numOfHands()).to.eqls(1) //for player a1
+        expect(maxFourGC.getPlayers()[0].numOfHands()).to.eqls(3) //for player p
+        expect(maxFourGC.getPlayers()[1].numOfHands()).to.eqls(1) //for player a1
     })
 
     it('Can follow double down rules', () => {

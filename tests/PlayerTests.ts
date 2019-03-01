@@ -101,7 +101,7 @@ describe('Player Class Tests', () => {
 
         it('Can use changeBetTo to properly change bet amount', () => {
             let p = new Player(PlayerType.MC).setBankroll(1000)
-            let minBet = GC.rule.minBet
+            let minBet = GC.getRules().minBet
             
             p.join(GC.delegator) 
             let whenJoin = p.getCurrentHand().getBet()
@@ -127,7 +127,7 @@ describe('Player Class Tests', () => {
     
         it('Can use changeBetBy to call changeBetTo with proper arguments', () => {
             let p = new Player(PlayerType.MC).setBankroll(10000)
-            const minBet = GC.rule.minBet
+            const minBet = GC.getRules().minBet
             let changeBySpy = sinon.spy(p, 'changeBetTo')
             
             p.join(GC.delegator) //join no longer calls changeBetTo, it calls changeHandTo(1) which forces the minBet
@@ -172,12 +172,14 @@ describe('Player Class Tests', () => {
         })
 
         it('Cannot join game at occupied positions', () => {
-            // let p = new Player(PlayerType.MC).setBankroll(10000)
-            // let pos = randomizeBetween(1, 5)
-            // p.join(GC.delegator, pos) //join at random position (exclude 0 since thats normal behavior)
-            // let actual = p.getPosition()
+            let p = new Player(PlayerType.MC).setBankroll(10000)
+            let ai = new Player(PlayerType.NPC).setBankroll(10000)
+            let pos = 4
 
-            // expect(actual).to.eqls(pos)
+            ai.join(GC.delegator, pos)
+            let successful = p.join(GC.delegator, pos) //should fail
+
+            expect(successful).to.eqls(false)
         })
 
     })

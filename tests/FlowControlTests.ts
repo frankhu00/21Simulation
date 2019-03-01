@@ -15,6 +15,12 @@ describe('Flow Control Tests', () => {
     let ai2: PlayerInterface
     let ai3: PlayerInterface
 
+    const joinGame = (gc: GameController, ...players: PlayerInterface[]) => {
+        players.forEach((p) => {
+            p.join(gc.delegator)
+        })
+    }
+
     beforeEach( () => {
         GID = 'FlowControlGC'
         GC = new GameController(dummyDeck, GID)
@@ -27,10 +33,7 @@ describe('Flow Control Tests', () => {
     it('GameController should have proper flowOrder property', () => {
 
         //Join order determines position if position is not specified in join call
-        p.join(GC.delegator);
-        ai.join(GC.delegator);
-        ai2.join(GC.delegator);
-        ai3.join(GC.delegator);
+        joinGame(GC, p, ai, ai2, ai3)
 
         //The flow order object should be
         const should: GameFlowInterface[] = [
@@ -73,6 +76,12 @@ describe('Flow Control Tests', () => {
         const actual = GC.getFlowOrder()
 
         expect(actual).to.eql(should)
+    })
+
+    it('Can do a full round rotation (all one hand and no hits)', () => {
+        joinGame(GC, p, ai, ai2, ai3)
+
+        //INITIATE Game
     })
 
 })

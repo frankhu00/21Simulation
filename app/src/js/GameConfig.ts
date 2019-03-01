@@ -1,4 +1,5 @@
 const defaultConfig: GameConfiguration = {
+    shuffleRepeats: 2,
     penetration: 0.65,
     penetrationOffset: 0.03, //means penetration +/- penetrationOffset
     // playerCount: 1, //this refers to mc players
@@ -10,6 +11,7 @@ const defaultConfig: GameConfiguration = {
 }
 
 export interface GameConfiguration {
+    shuffleRepeats: number,
     penetration: number,
     penetrationOffset: number,
     // playerCount: number, //*N1

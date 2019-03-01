@@ -35,7 +35,6 @@ export interface CardCollectionInterface {
     getCards: (cardList: Card[] | Card, matchSuit: boolean) => Card[] | boolean;
     addCard: (card: Card | Card[]) => CardCollectionInterface;
     removeCards: (card: Card | number, matchSuit: boolean) => Card[] | boolean;
-    tossCard: () => CardCollectionInterface;
     createCard: (representation: number, deck: number) => Card;
     generateDecks: (deck: number) => Card[];
     generateCardList: (numCards: number, deck: number, setRC: setRCType ) => Card[];
@@ -185,12 +184,6 @@ class CardCollection implements CardCollectionInterface {
                 return false
             }
         }
-    }
-
-    //Removes first card (goes straight to tha shoe bin)
-    tossCard() {
-        this.cards.shift()
-        return this
     }
 
     createCard(representation: number, deck: number = 1) {

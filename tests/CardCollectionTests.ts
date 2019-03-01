@@ -287,6 +287,7 @@ let DeckWithKnownOrder = new Deck({cards: DefinedCardOrder})
 describe('Card Collect Class Shuffle', () => {
 
     it('Can shuffle via RNG Shuffle method', () => {
+        expect(DefinedCardOrder).to.eql(DeckWithKnownOrder.get());
         DeckWithKnownOrder.shuffle()
         expect(DefinedCardOrder).to.not.eql(DeckWithKnownOrder.get());
     })
