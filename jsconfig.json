@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "moduleResolution": "node",
+        "jsx": "react",
+        "baseUrl": "./",
+        "paths": {
+            "~src/*": ["app/src/*"],
+            "~model/*": ["app/src/model/*"],
+            "~ui/*": ["app/src/ui/*"],
+            "~page/*": ["app/src/ui/page/*"],
+            "~css/*": ["app/src/css/*"]
+        }
+    },
+    "include": ["app/src", "__tests__"],
+    "typeAcquisition": { "include": ["jest"] }
+}

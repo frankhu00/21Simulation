@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite id="0" name="C:\Users\frank\Desktop\21Simulation\__tests__\Hand.test.ts" errors="0" package="C:\Users\frank\Desktop\21Simulation\__tests__\Hand.test.ts" hostname="localhost" tests="2" failures="0" time="9.607" timestamp="2020-04-04T07:17:55">
+    <properties>
+    </properties>
+    <testcase classname="Playing Hand Tests" name="Can Compute Values" time="0">
+    </testcase>
+    <testcase classname="Playing Hand Tests" name="Can Get Highest Valid Value" time="0">
+    </testcase>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="1" name="C:\Users\frank\Desktop\21Simulation\__tests__\CardCollection.test.ts" errors="0" package="C:\Users\frank\Desktop\21Simulation\__tests__\CardCollection.test.ts" hostname="localhost" tests="9" failures="0" time="1.837" timestamp="2020-04-04T07:18:04">
+    <properties>
+    </properties>
+    <testcase classname="Deck Generate Whole Deck / GenerateCardList No Repeated Cards Test" name="No Repeated Card (Complete Deck)" time="0">
+    </testcase>
+    <testcase classname="Deck Generate Whole Deck / GenerateCardList No Repeated Cards Test" name="No Repeated Card (Partial Deck)" time="0">
+    </testcase>
+    <testcase classname="Deck Generate Proper Number of Cards Test" name="Proper Amount of Card (Complete Deck)" time="0">
+    </testcase>
+    <testcase classname="Deck Generate Proper Number of Cards Test" name="Proper Amount of Card (Partial Deck)" time="0">
+    </testcase>
+    <testcase classname="Shoe Generate Whole Shoe (various # decks) / GenerateCardList No Repeated Cards Test" name="No Repeated Card (Complete Shoe - 2 to 12 decks)" time="0">
+    </testcase>
+    <testcase classname="Shoe Generate Whole Shoe (various # decks) / GenerateCardList No Repeated Cards Test" name="No Repeated Card (Partial Shoe - 2 to 12 decks)" time="0">
+    </testcase>
+    <testcase classname="Shoe Generate Proper Number of Cards Test" name="Proper Amount of Cards (Complete Shoe - 2 to 12 decks)" time="0">
+    </testcase>
+    <testcase classname="Shoe Generate Proper Number of Cards Test" name="Proper Amount of Cards (Partial Shoe - 2 to 12 decks)" time="0">
+    </testcase>
+    <testcase classname="Card Collect Class Shuffle" name="Can shuffle via RNG Shuffle method" time="0">
+    </testcase>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="2" name="C:\Users\frank\Desktop\21Simulation\__tests__\GameControl.test.ts" errors="0" package="C:\Users\frank\Desktop\21Simulation\__tests__\GameControl.test.ts" hostname="localhost" tests="11" failures="0" time="11.628" timestamp="2020-04-04T07:17:55">
+    <properties>
+    </properties>
+    <testcase classname="GameController Tests" name="Can register players" time="0">
+    </testcase>
+    <testcase classname="GameController Tests" name="Can register multiple players" time="0">
+    </testcase>
+    <testcase classname="GameController Tests" name="Can have multiple players join" time="0">
+    </testcase>
+    <testcase classname="GameController Tests" name="Can properly limit player size to 4 hands (1 hand per player)" time="0">
+    </testcase>
+    <testcase classname="GameController Tests" name="Can properly limit player size to 4 hands (1 player with 4 hands)" time="0">
+    </testcase>
+    <testcase classname="GameController Tests" name="Can properly limit player size to 4 hands (3 hands for mc player, 1 for ai)" time="0">
+    </testcase>
+    <testcase classname="GameController Tests" name="Does force number of hands to 1 and bet amount to min bet on player join" time="0">
+    </testcase>
+    <testcase classname="GameController Tests" name="Can properly process change hand commands from player" time="0">
+    </testcase>
+    <testcase classname="GameController Tests" name="Can prevent invalid change hand commands from player (max)" time="0">
+    </testcase>
+    <testcase classname="GameController Tests" name="Can prevent invalid change hand commands from player (min of 1)" time="0">
+    </testcase>
+    <testcase classname="GameController Tests" name="Can follow double down rules" time="0">
+    </testcase>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="3" name="C:\Users\frank\Desktop\21Simulation\__tests__\Player.test.ts" errors="0" package="C:\Users\frank\Desktop\21Simulation\__tests__\Player.test.ts" hostname="localhost" tests="14" failures="0" time="11.777" timestamp="2020-04-04T07:17:55">
+    <properties>
+    </properties>
+    <testcase classname="Player Hand Tests" name="Can use changeHandTo to properly set number of hands" time="0">
+    </testcase>
+    <testcase classname="Player Hand Tests" name="Can validate min / max number of hands" time="0">
+    </testcase>
+    <testcase classname="Player Hand Tests" name="Can use changeHandBy to call changeHandTo with proper arguments" time="0">
+    </testcase>
+    <testcase classname="Player Hand Tests" name="Can force min per hand rule on multiple hands (checks sum of hands)" time="0">
+    </testcase>
+    <testcase classname="Player Hand Tests" name="Can compute proper bankroll after changing number of hands" time="0">
+    </testcase>
+    <testcase classname="Player Bet Amount Tests" name="Can use changeBetTo to properly change bet amount" time="0">
+    </testcase>
+    <testcase classname="Player Bet Amount Tests" name="Can validate min / max bet amount" time="0">
+    </testcase>
+    <testcase classname="Player Bet Amount Tests" name="Can use changeBetBy to call changeBetTo with proper arguments" time="0">
+    </testcase>
+    <testcase classname="Player Action Tests" name="Checks hand before hit" time="0">
+    </testcase>
+    <testcase classname="Player Action Tests" name="Checks bet amount and rules before double down" time="0">
+    </testcase>
+    <testcase classname="Player Action Tests" name="Checks bet amount, rules, and hand before split" time="0">
+    </testcase>
+    <testcase classname="Player Action Tests" name="Checks bet amount, rules, and dealer hand before insurance" time="0">
+    </testcase>
+    <testcase classname="Player Action Tests" name="Can join game at specified positions" time="0">
+    </testcase>
+    <testcase classname="Player Action Tests" name="Cannot join game at occupied positions" time="0">
+    </testcase>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="4" name="C:\Users\frank\Desktop\21Simulation\__tests__\FlowControl.test.ts" errors="0" package="C:\Users\frank\Desktop\21Simulation\__tests__\FlowControl.test.ts" hostname="localhost" tests="2" failures="0" time="0.47" timestamp="2020-04-04T07:18:06">
+    <properties>
+    </properties>
+    <testcase classname="Flow Control Tests" name="GameController should have proper flowOrder property" time="0">
+    </testcase>
+    <testcase classname="Flow Control Tests" name="Can do a full round rotation (all one hand and no hits)" time="0">
+    </testcase>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="5" name="C:\Users\frank\Desktop\21Simulation\__tests__\CountingSystem.test.ts" errors="0" package="C:\Users\frank\Desktop\21Simulation\__tests__\CountingSystem.test.ts" hostname="localhost" tests="10" failures="0" time="0.75" timestamp="2020-04-04T07:18:06">
+    <properties>
+    </properties>
+    <testcase classname="CSManager Methods Test" name="CSManager add new counting systems" time="0">
+    </testcase>
+    <testcase classname="CSManager Methods Test" name="CSManager does not add repeated systems (multiple calls to add method with repeated systems)" time="0">
+    </testcase>
+    <testcase classname="CSManager Methods Test" name="CSManager does not add repeated systems (array input with repeated systems)" time="0">
+    </testcase>
+    <testcase classname="CSManager Methods Test" name="CSManager remove one counting system via CountingSystem class" time="0">
+    </testcase>
+    <testcase classname="CSManager Methods Test" name="CSManager remove mulitple systems via CountingSystem class" time="0">
+    </testcase>
+    <testcase classname="CSManager Methods Test" name="CSManager remove one counting system via systemList index" time="0">
+    </testcase>
+    <testcase classname="CSManager Methods Test" name="CSManager remove all systems" time="0">
+    </testcase>
+    <testcase classname="Card Counting Test - Using HiLo, WongHavles, and OmegaII" name="HiLo - Predefined Deck - Running Count should be +2, -3, and 0" time="0">
+    </testcase>
+    <testcase classname="Card Counting Test - Using HiLo, WongHavles, and OmegaII" name="WongHavles - Predefined Deck - Running Count should be +1.5, -4, and 0" time="0">
+    </testcase>
+    <testcase classname="Card Counting Test - Using HiLo, WongHavles, and OmegaII" name="OmegaII - Predefined Deck - Running Count should be +4, -7, and 0" time="0">
+    </testcase>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+</testsuites>
