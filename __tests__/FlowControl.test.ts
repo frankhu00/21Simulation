@@ -1,5 +1,5 @@
 import Player, { PlayerType, PlayerInterface } from '~model/Player';
-import GameController, { GameFlowInterface } from '~model/GameController';
+import GameController, { GameFlowInterface, GameActionPhase } from '~model/GameController';
 import { Shoe, CardCollectionInterface } from '~model/CardCollection';
 
 describe('Flow Control Tests', () => {
@@ -73,9 +73,40 @@ describe('Flow Control Tests', () => {
         expect(actual).toStrictEqual(should);
     });
 
+    it('Has a proper phase cycle', () => {
+        const phaseCycle = GC.getPhase();
+        const actual = [
+            phaseCycle.get().value,
+            phaseCycle.next().value,
+            phaseCycle.next().value,
+            phaseCycle.next().value,
+            phaseCycle.next().value,
+            phaseCycle.next().value,
+            phaseCycle.next().value,
+            phaseCycle.next().value,
+            phaseCycle.next().value,
+        ];
+
+        const expected = [
+            GameActionPhase.START,
+            GameActionPhase.BET,
+            GameActionPhase.DEAL,
+            GameActionPhase.PLAY,
+            GameActionPhase.HOUSE,
+            GameActionPhase.CHECK,
+            GameActionPhase.PAYOUT,
+            GameActionPhase.END,
+            GameActionPhase.START,
+        ];
+
+        expect(actual.map((a) => a.toString())).toStrictEqual(expected.map((e) => e.toString()));
+    });
+
     it('Can do a full round rotation (all one hand and no hits)', () => {
         joinGame(GC, p, ai, ai2, ai3);
 
         //INITIATE Game
+        const startedSuccessfully = GC.startGame();
+        expect(startedSuccessfully).toBe(true);
     });
 });
