@@ -2,3 +2,5 @@
 .DS_Store
 .vscode/
 app/dist/
+reports/
+coverage/
