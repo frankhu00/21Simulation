@@ -1,5 +1,6 @@
 import Player, { PlayerType, PlayerInterface } from '~model/Player';
-import GameController, { GameFlowInterface, GameActionPhase } from '~model/GameController';
+import GameController, { GameFlowInterface } from '~model/GameController';
+import { GameActionPhase } from '~model/PhaseActionController';
 import { Shoe, CardCollectionInterface } from '~model/CardCollection';
 
 describe('Flow Control Tests', () => {
@@ -74,20 +75,22 @@ describe('Flow Control Tests', () => {
     });
 
     it('Has a proper phase cycle', () => {
-        const phaseCycle = GC.getPhase();
+        const phaseCycle = GC.getPhaseCycle();
         const actual = [
-            phaseCycle.get().value,
-            phaseCycle.next().value,
-            phaseCycle.next().value,
-            phaseCycle.next().value,
-            phaseCycle.next().value,
-            phaseCycle.next().value,
-            phaseCycle.next().value,
-            phaseCycle.next().value,
-            phaseCycle.next().value,
+            phaseCycle.get(),
+            phaseCycle.next().get(),
+            phaseCycle.next().get(),
+            phaseCycle.next().get(),
+            phaseCycle.next().get(),
+            phaseCycle.next().get(),
+            phaseCycle.next().get(),
+            phaseCycle.next().get(),
+            phaseCycle.next().get(),
+            phaseCycle.next().get(),
         ];
 
         const expected = [
+            GameActionPhase.END, //starts at END
             GameActionPhase.START,
             GameActionPhase.BET,
             GameActionPhase.DEAL,
@@ -108,5 +111,6 @@ describe('Flow Control Tests', () => {
         //INITIATE Game
         const startedSuccessfully = GC.startGame();
         expect(startedSuccessfully).toBe(true);
+        expect(GC.getCurrentPhase()).toBe(GameActionPhase.START);
     });
 });

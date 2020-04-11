@@ -4,10 +4,11 @@
 import defaultRules, { PlayRuleOption } from './PlayRule';
 import defaultConfig, { GameConfiguration } from './GameConfig';
 import Player, { PlayerInterface, PlayerType } from './Player';
+import GameDelegator, { GameDelegatorInterface } from './GameDelegator';
+import { GameActionPhase } from './PhaseActionController';
 
 import Notifier from './Notifier';
 import { Statistics, Tracker } from './Statistics';
-import { PlayingHand } from './Hand';
 import Card from './Card';
 import CardCollection, { CardCollectionInterface } from './CardCollection';
 
@@ -19,21 +20,14 @@ export interface GameFlowInterface {
     player?: PlayerInterface;
 }
 
-export enum GameActionPhase {
-    START, //new player can join if rules allow
-    BET,
-    DEAL,
-    PLAY,
-    HOUSE,
-    CHECK,
-    PAYOUT,
-    END,
-}
-
-export interface GameControl {
+/**
+ * This is for controlling the game and the game flow
+ * Player actions that affects the game and game flow are in GameDelegatorInterface
+ */
+export interface GameControlInterface {
     // readonly rule: PlayRuleOption
     // readonly config: GameConfiguration
-    delegator: GameControlDelegator;
+    delegator: GameDelegatorInterface;
     gid: string;
 
     //Table related
@@ -55,25 +49,26 @@ export interface GameControl {
     //Flow Control related
     isGameStarted: () => boolean;
     getFlowOrder: () => GameFlowInterface[];
-    updateFlowOrder: (byPos: number, withPlayer: PlayerInterface) => GameControl;
+    updateFlowOrder: (byPos: number, withPlayer: PlayerInterface) => GameControlInterface;
     getPlayerFlowOrder: () => GameFlowInterface[];
     startGame: (withShoe?: CardCollectionInterface) => boolean;
-    stopGame: () => GameControl;
-    getPhase: () => CycleDataType;
+    stopGame: () => GameControlInterface;
+    getPhaseCycle: () => CycleDataType;
+    getCurrentPhase: () => GameActionPhase;
     phaseCycle: CycleDataType;
 
     //Shoe related
     getShoe: () => CardCollectionInterface;
     getDealtBin: () => CardCollectionInterface;
-    burnCard: (amt: number) => GameControl;
-    cleanup: (withShoe?: CardCollectionInterface) => GameControl;
-    shuffle: () => GameControl;
-    dealRound: () => GameControl;
+    burnCard: (amt: number) => GameControlInterface;
+    cleanup: (withShoe?: CardCollectionInterface) => GameControlInterface;
+    shuffle: () => GameControlInterface;
+    dealRound: () => GameControlInterface;
 }
 
-class GameController implements GameControl {
+class GameController implements GameControlInterface {
     public gid: string;
-    public delegator: GameControlDelegator = new GameDelegator(this);
+    public delegator: GameDelegatorInterface = new GameDelegator(this);
     public phaseCycle: CycleDataType = new CycleDataType(
         GameActionPhase.START,
         GameActionPhase.BET,
@@ -108,6 +103,8 @@ class GameController implements GameControl {
         this.shoe = shoe;
         this.backupShoe = shoe.clone();
         this.dealtCards = new CardCollection();
+        //Set the game phase cycle to END phase
+        this.phaseCycle.skipToTail();
 
         this.flowOrder = [...Array(this.config.tableMaxHands)].map((_, i) => {
             const gameFlow: GameFlowInterface = {
@@ -129,6 +126,9 @@ class GameController implements GameControl {
 
     isGameStarted = () => this.shoeInProgress;
 
+    /**
+     * Cleans up shoe (only when start game or end game is called)
+     */
     cleanup = (withShoe?: CardCollectionInterface) => {
         //clean up prev shoe stuff
         if (withShoe) {
@@ -141,6 +141,7 @@ class GameController implements GameControl {
 
         this.dealtCards = new CardCollection();
         this.shoeInProgress = false;
+        this.phaseCycle.skipToTail();
         return this;
     };
 
@@ -149,16 +150,17 @@ class GameController implements GameControl {
      */
     startGame = (withShoe?: CardCollectionInterface) => {
         this.cleanup(withShoe).shuffle().burnCard();
-
-        if (!this.isGameStarted()) {
+        const successful = this.isGameStarted();
+        if (!successful) {
+            this.stopGame();
             throw new Error('Failed to start game!');
         }
-        return this.isGameStarted();
+        this.phaseCycle.next();
+        return successful;
     };
 
     stopGame = () => {
         this.cleanup();
-        this.shoeInProgress = false;
         return this;
     };
 
@@ -289,8 +291,26 @@ class GameController implements GameControl {
     /**
      * Returns the phase cycle
      */
-    getPhase = () => {
+    getPhaseCycle = () => {
         return this.phaseCycle;
+    };
+
+    /**
+     * Returns current action phase
+     */
+    getCurrentPhase: () => GameActionPhase = () => {
+        return this.getPhaseCycle().get();
+    };
+
+    beginPhaseAction = () => {
+        const phase = this.getCurrentPhase();
+    };
+
+    /**
+     * Go to the next phase
+     */
+    nextPhase = () => {
+        this.phaseCycle = this.getPhaseCycle().next();
     };
 
     getEmptyPositions = () => {
@@ -380,196 +400,4 @@ class GameController implements GameControl {
     };
 }
 
-export interface GameControlDelegator {
-    next: (player: PlayerInterface) => any;
-    register: (player: PlayerInterface, pos?: number) => boolean;
-    unregister: (player: PlayerInterface) => boolean;
-    getOpenHands: () => number;
-    getMinBet: () => number;
-    getMaxBet: () => number;
-    getDealerShowingCard: () => Card | undefined;
-    canDoubleDown: (withHand: PlayingHand) => boolean;
-    canSplit: (withHand: PlayingHand) => boolean;
-    canInsurance: () => boolean;
-    canSurrender: () => boolean;
-    deal: () => Card | undefined;
-    getMinBetForNumHands: (numHands: number) => number;
-    getGameID: () => string;
-    getPlayerPosition: (player: PlayerInterface) => number | null;
-}
-
-//Separated delegation methods from controller
-class GameDelegator implements GameControlDelegator {
-    private controller: GameControl;
-    constructor(controller: GameControl) {
-        this.controller = controller;
-    }
-
-    getGameID() {
-        return this.controller.gid;
-    }
-
-    deal() {
-        const dealtCard = this.controller.getShoe().deal();
-        if (!dealtCard) {
-            Notifier.error("GameController can't deal card. Shoe is empty");
-        }
-        return dealtCard;
-    }
-
-    next(player: PlayerInterface) {
-        //Signals from Player class to tell the GameController to move onto either:
-        // 1) next hand of the same Player
-        // 2) next Player
-        // 3) End round and begin calculating phase
-        // 4) Finish calculated results (payout or collect wins)
-        // 5) Wait for betSize / numHand changes from all players
-        // 6) Start a new round
-        // 7) End shoe and begin shuffle
-        // 8) Start shoe (put top card away and deal 1st round)
-
-        //Player needs to have position set to use as indicator ?
-        //Finish the flow control
-        const currentPos = player.getPosition();
-        if (player.hasNextHand()) {
-            player.toNextHand().startHand();
-        } else {
-        }
-
-        Notifier.notify('Delegation method called');
-    }
-
-    register(player: PlayerInterface, pos?: number) {
-        if (player.getType() == PlayerType.Dealer) {
-            return false;
-        }
-
-        let openHands = this.getOpenHands();
-        if (openHands > 0) {
-            let position = typeof pos != 'undefined' ? pos : this.controller.getNextOpenPosition();
-            if (position != null) {
-                if (this.controller.isPositionEmpty(position)) {
-                    player.setDelegator(this).changeHandTo(1); //changeHandTo will auto min bet
-                    this.controller.addPlayer(player, position);
-                    return true;
-                } else {
-                    Notifier.error(`Position ${pos} is already occupied!`);
-                    return false;
-                }
-            } else {
-                Notifier.error('There are no more open positions!');
-                return false;
-            }
-        }
-
-        return false;
-    }
-
-    unregister(player: PlayerInterface) {
-        return false;
-    }
-
-    getMinBet = () => {
-        return this.controller.getRules().minBet;
-    };
-
-    getMinBetForNumHands = (numHands: number) => {
-        return numHands == 1
-            ? this.controller.getRules().minBet
-            : this.controller.getRules().betSizeToNumHands * numHands;
-    };
-
-    getMaxBet = () => {
-        return this.controller.getRules().maxBet;
-    };
-
-    getDealerShowingCard = () => this.controller.getDealer().getCurrentHand().getFirstCard();
-
-    getPlayerPosition = (player: PlayerInterface) => {
-        let match = this.controller.getFlowOrder().filter((fo) => fo.player == player);
-        if (match.length > 0) {
-            return match[0].position;
-        } else {
-            return null;
-        }
-    };
-
-    canSplit = (withHand: PlayingHand) => {
-        const firstCard = withHand.getFirstCard();
-        const secondCard = withHand.getSecondCard();
-        const rule = this.controller.getRules();
-        if (withHand.getTotalCards() != 2 || !firstCard || !secondCard) {
-            return false;
-        }
-
-        if (firstCard.getKey() != secondCard.getKey()) {
-            return false;
-        }
-
-        //After this point, firstCard == secondCard
-        if (firstCard.getKey() == 'A') {
-            return this.canSplitAces(withHand);
-        }
-
-        if (typeof rule.splitOn == 'boolean') {
-            //This also means strictSplit is false
-            return rule.splitOn;
-        } else {
-            //Need to account for
-            //      1) # of splits (WIP... how to do it)
-            //      2) strict splitting (QQ vs QK etc) (in QA)
-
-            // Ace case is taken care of above
-            if (rule.splitOn.includes(firstCard.getValue()[0])) {
-                if (rule.strictSplit) {
-                    return firstCard.getKey() == secondCard.getKey();
-                } else {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-    };
-
-    canSplitAces = (withHand: PlayingHand) => {
-        return false;
-    };
-
-    canDoubleDown = (withHand: PlayingHand) => {
-        const rule = this.controller.getRules();
-        if (withHand.getTotalCards() != 2) {
-            return false;
-        }
-        if (typeof rule.doubleDownOn == 'boolean') {
-            return rule.doubleDownOn;
-        } else {
-            const [hard, soft] = withHand.getValue();
-            return rule.doubleDownOn.includes(hard) || rule.doubleDownOn.includes(soft);
-        }
-    };
-
-    canInsurance = () => {
-        const show = this.getDealerShowingCard();
-        if (show) {
-            return show.getKey() == 'A';
-        } else {
-            Notifier.error('Dealer has no cards.');
-            return false;
-        }
-    };
-
-    canSurrender = () => {
-        return this.controller.getRules().surrender;
-    };
-
-    getOpenHands = () => {
-        return (
-            this.controller.getConfig().tableMaxHands -
-            this.controller.getTotalHands(this.controller.getPlayers())
-        );
-    };
-}
-
-export { GameDelegator };
 export default GameController;

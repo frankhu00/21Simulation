@@ -1,10 +1,9 @@
-interface LinkedListInterface {
+export interface LinkedListInterface {
     value: any;
     prev: () => LinkedListInterface | null;
     next: () => LinkedListInterface | null;
     setPrev: (before: LinkedListInterface | null) => void;
     setNext: (after: LinkedListInterface | null) => void;
-    getPointer: () => LinkedListInterface;
 }
 
 class LinkedItem implements LinkedListInterface {
@@ -33,16 +32,12 @@ class LinkedItem implements LinkedListInterface {
     setNext(after: LinkedListInterface | null) {
         this.after = after;
     }
-
-    getPointer() {
-        return this;
-    }
 }
 
 export default class CycleDataType {
     private head: any = null;
     private tail: any = null;
-    private current: LinkedListInterface;
+    private currentItem: LinkedListInterface;
     private list: LinkedListInterface[];
 
     constructor(...args: any[]) {
@@ -60,26 +55,26 @@ export default class CycleDataType {
                 item.setNext(this.list[ind + 1]);
             }
         });
-        this.head = this.list[0].getPointer();
-        this.tail = this.list[end].getPointer();
-        this.current = this.list[0];
+        this.head = this.list[0];
+        this.tail = this.list[end];
+        this.currentItem = this.list[0];
     }
 
     prev() {
-        const prev = this.current.prev();
+        const prev = this.current().prev();
         if (prev) {
-            this.current = prev;
-            return this.current;
+            this.currentItem = prev;
+            return this;
         } else {
             throw new Error('CycleDataType Ended Unexpectedly');
         }
     }
 
     next() {
-        const next = this.current.next();
+        const next = this.current().next();
         if (next) {
-            this.current = next;
-            return this.current;
+            this.currentItem = next;
+            return this;
         } else {
             throw new Error('CycleDataType Ended Unexpectedly');
         }
@@ -89,18 +84,28 @@ export default class CycleDataType {
         for (let i = 0; i < n; i++) {
             this.prev();
         }
-        return this.get();
+        return this;
     }
 
     nthNext(n: number) {
         for (let i = 0; i < n; i++) {
             this.next();
         }
-        return this.get();
+        return this;
     }
 
+    /**
+     * Returns the current item (LinkedListInterface)
+     */
+    current() {
+        return this.currentItem;
+    }
+
+    /**
+     * Returns the current item's value
+     */
     get() {
-        return this.current;
+        return this.current().value;
     }
 
     getCycleHead() {
@@ -109,5 +114,15 @@ export default class CycleDataType {
 
     getCycleTail() {
         return this.tail;
+    }
+
+    skipToHead() {
+        this.currentItem = this.getCycleHead();
+        return this;
+    }
+
+    skipToTail() {
+        this.currentItem = this.getCycleTail();
+        return this;
     }
 }

@@ -4,12 +4,12 @@ describe('CycleDataType Tests', () => {
     it('Can step forwards through a cycle', () => {
         const cycle = new CycleDataType(9, 8, 7);
         const actual = [
-            cycle.get().value,
-            cycle.next().value,
-            cycle.next().value,
-            cycle.next().value,
-            cycle.next().value,
-            cycle.next().value,
+            cycle.get(),
+            cycle.next().get(),
+            cycle.next().get(),
+            cycle.next().get(),
+            cycle.next().get(),
+            cycle.next().get(),
         ];
         const expected = [9, 8, 7, 9, 8, 7];
 
@@ -19,12 +19,12 @@ describe('CycleDataType Tests', () => {
     it('Can step backwards through a cycle', () => {
         const cycle = new CycleDataType(9, 8, 7);
         const actual = [
-            cycle.get().value,
-            cycle.prev().value,
-            cycle.prev().value,
-            cycle.prev().value,
-            cycle.prev().value,
-            cycle.prev().value,
+            cycle.get(),
+            cycle.prev().get(),
+            cycle.prev().get(),
+            cycle.prev().get(),
+            cycle.prev().get(),
+            cycle.prev().get(),
         ];
         const expected = [9, 7, 8, 9, 7, 8];
 
@@ -45,11 +45,27 @@ describe('CycleDataType Tests', () => {
 
     it('Can step forwards n times', () => {
         const cycle = new CycleDataType(4, 8, 3, 'dog', 0, 'cat');
-        expect(cycle.nthNext(7).value).toStrictEqual(8);
+        expect(cycle.nthNext(7).get()).toStrictEqual(8);
     });
 
     it('Can step backwards n times', () => {
         const cycle = new CycleDataType(4, 8, 3, 'dog', 0, 'cat');
-        expect(cycle.nthPrev(15).value).toStrictEqual('dog');
+        expect(cycle.nthPrev(15).get()).toStrictEqual('dog');
+    });
+
+    it('Can skip to the head of the cycle', () => {
+        const cycle = new CycleDataType('bird', 1, 3, 'cat', 0, 'dog');
+        cycle.nthNext(3);
+        expect(cycle.get()).toBe('cat');
+        cycle.skipToHead();
+        expect(cycle.get()).toBe('bird');
+    });
+
+    it('Can skip to the tail of the cycle', () => {
+        const cycle = new CycleDataType('bird', 1, 3, 'cat', 0, 'dog');
+        cycle.nthNext(2);
+        expect(cycle.get()).toBe(3);
+        cycle.skipToTail();
+        expect(cycle.get()).toBe('dog');
     });
 });
