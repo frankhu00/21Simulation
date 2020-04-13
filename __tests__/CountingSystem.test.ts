@@ -3,6 +3,10 @@ import Card from '~model/Card';
 import CSManager, { HiLo, WongHalves, OmegaII } from '~model/CountingSystem';
 
 describe('CSManager / Counting System Test', () => {
+    console.log = jest.fn();
+    console.warn = jest.fn();
+    console.error = jest.fn();
+
     describe('CSManager Methods Test', () => {
         beforeEach(() => {
             CSManager.removeAll();

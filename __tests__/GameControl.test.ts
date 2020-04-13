@@ -7,6 +7,10 @@ import Card from '~model/Card';
 import { Deck, CardCollectionInterface } from '~model/CardCollection';
 
 describe('GameController Tests', () => {
+    console.log = jest.fn();
+    console.warn = jest.fn();
+    console.error = jest.fn();
+
     let GID: string;
     let GC: GameController;
     let dummyDeck: CardCollectionInterface = new Deck();
@@ -160,16 +164,23 @@ describe('GameController Tests', () => {
         expect(maxFourGC.getPlayers()[1].numOfHands()).toStrictEqual(1); //for player a1
     });
 
-    it('Can prevent invalid change hand commands from player (min of 1)', () => {
+    it('Can prevent invalid change hand commands from player (min of 0)', () => {
         let p = new Player(PlayerType.MC).setBankroll(10000);
         let a1 = new Player(PlayerType.NPC).setBankroll(10000);
 
         p.join(maxFourGC.delegator);
         p.changeHandTo(3).changeHandTo(-1);
         a1.join(maxFourGC.delegator);
-        a1.changeHandTo(0); //should be invalid so numOfHands should still be 1
-
+        a1.changeHandTo(0); //means isSitOut = true
+        expect(a1.isSitOut).toBe(true);
         expect(maxFourGC.getPlayers()[0].numOfHands()).toStrictEqual(3); //for player p
+        expect(maxFourGC.getPlayers()[1].numOfHands()).toStrictEqual(0); //for player a1
+
+        a1.changeHandTo(-1); //invalid so nothing happens
+        expect(a1.isSitOut).toBe(true);
+        expect(maxFourGC.getPlayers()[1].numOfHands()).toStrictEqual(0); //for player a1
+        a1.changeHandTo(1); //invalid so nothing happens
+        expect(a1.isSitOut).toBe(false);
         expect(maxFourGC.getPlayers()[1].numOfHands()).toStrictEqual(1); //for player a1
     });
 

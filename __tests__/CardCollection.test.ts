@@ -11,6 +11,9 @@ interface ShoeTestsInterface {
     cardIDList: string[];
     decks: number;
 }
+console.log = jest.fn();
+console.warn = jest.fn();
+console.error = jest.fn();
 
 describe('Deck Generate Whole Deck / GenerateCardList No Repeated Cards Test', () => {
     it('No Repeated Card (Complete Deck)', () => {

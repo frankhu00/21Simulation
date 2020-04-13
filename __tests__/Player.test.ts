@@ -7,6 +7,10 @@ import PlayRule from '~model/PlayRule';
 import { randomizeBetween } from '~model/Utility';
 
 describe('Player Class Tests', () => {
+    console.log = jest.fn();
+    console.warn = jest.fn();
+    console.error = jest.fn();
+
     let GC: GameController;
     let dummyDeck: CardCollectionInterface = new Deck();
     beforeEach(() => {

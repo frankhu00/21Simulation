@@ -5,7 +5,11 @@ import defaultRules, { PlayRuleOption } from './PlayRule';
 import defaultConfig, { GameConfiguration } from './GameConfig';
 import Player, { PlayerInterface, PlayerType } from './Player';
 import GameDelegator, { GameDelegatorInterface } from './GameDelegator';
-import { GameActionPhase } from './PhaseActionController';
+import {
+    PhaseActionController,
+    GameActionPhase,
+    PhaseControllerInterface,
+} from './PhaseActionController';
 
 import Notifier from './Notifier';
 import { Statistics, Tracker } from './Statistics';
@@ -56,16 +60,20 @@ export interface GameControlInterface {
     getPhaseCycle: () => CycleDataType;
     getCurrentPhase: () => GameActionPhase;
     phaseCycle: CycleDataType;
+    onPhaseEnd: () => void;
 
     //Shoe related
     getShoe: () => CardCollectionInterface;
     getDealtBin: () => CardCollectionInterface;
     burnCard: (amt: number) => GameControlInterface;
+    takeCard: () => Card;
     cleanup: (withShoe?: CardCollectionInterface) => GameControlInterface;
     shuffle: () => GameControlInterface;
-    dealRound: () => GameControlInterface;
 }
 
+/**
+ * Need to clean up and separate cleanly on fns thats should be here or on GameDelegator
+ */
 class GameController implements GameControlInterface {
     public gid: string;
     public delegator: GameDelegatorInterface = new GameDelegator(this);
@@ -171,6 +179,7 @@ class GameController implements GameControlInterface {
 
     /**
      * This is method that signals the start of the game. IT SHOULD ONLY BE CALLED AT THE VERY START OF GAME
+     * Use takeCard() to "hit" or "deal" cards
      */
     burnCard = (amt: number = 1) => {
         let burnCards: Card[] = [];
@@ -180,7 +189,7 @@ class GameController implements GameControlInterface {
             if (dealtCard) {
                 burnCards.push(dealtCard);
             } else {
-                Notifier.error('No cards dealt. Cannot burn card. Start game failed');
+                Notifier.warn('No cards dealt. Cannot burn card. Start game failed');
                 err = true;
                 break;
             }
@@ -191,72 +200,84 @@ class GameController implements GameControlInterface {
         return this;
     };
 
-    dealRound = () => {
-        if (!this.isGameStarted()) {
-            Notifier.error('Game did not start yet');
-            return this;
+    takeCard: () => Card = () => {
+        try {
+            const dealtCard = this.getShoe().deal();
+            return dealtCard!;
+        } catch (e) {
+            throw e;
         }
-
-        //Dealing first card
-        let firstDealPassed = this.dealLoop(true);
-        if (firstDealPassed) {
-            //Dealing second card
-            this.dealLoop(false);
-        }
-
-        return this;
     };
+
+    // dealRound = () => {
+    //     if (!this.isGameStarted()) {
+    //         Notifier.error('Game did not start yet');
+    //         return this;
+    //     }
+
+    //     //Dealing first card
+    //     let firstDealPassed = this.dealLoop(true);
+    //     if (firstDealPassed) {
+    //         //Dealing second card
+    //         this.dealLoop(false);
+    //     }
+
+    //     return this;
+    // };
 
     //Not in interface, only used when dealing the initial hand cards
-    private dealHandCardsTo = (player: PlayerInterface, first: boolean) => {
-        //NEED TO TAKE CARE OF OTHER PLAYER HANDS HERE
-        return this.checkDealtCard(
-            this.getShoe().deal(),
-            (card: Card) => {
-                if (first) {
-                    player.getCurrentHand().dealFirstCard(card);
-                } else {
-                    player.getCurrentHand().dealSecondCard(card);
-                }
-                return true;
-            },
-            () => {
-                this.stopGame();
-                return false;
-            }
-        );
-    };
+    // private dealHandCardsTo = (player: PlayerInterface, first: boolean) => {
+    //     //NEED TO TAKE CARE OF OTHER PLAYER HANDS HERE
+    //     return this.checkDealtCard(
+    //         this.getShoe().deal(),
+    //         (card: Card) => {
+    //             if (first) {
+    //                 player.getCurrentHand().dealFirstCard(card);
+    //             } else {
+    //                 player.getCurrentHand().dealSecondCard(card);
+    //             }
+    //             return true;
+    //         },
+    //         () => {
+    //             this.stopGame();
+    //             return false;
+    //         }
+    //     );
+    // };
 
+    /**
+     * Don't need this anymore... this is handled in BetPhaseController.action
+     */
     //Not in the interface
-    private dealLoop = (first: boolean) => {
-        let dealSuccessfully: boolean = false;
-        for (let i = 0; this.getPlayerFlowOrder().length; i++) {
-            let p = this.getPlayerFlowOrder()[i].player!; //this.getPlayerFlowOrder ensures theres valid player
-            dealSuccessfully = this.dealHandCardsTo(p, first);
-            if (!dealSuccessfully) {
-                break;
-            }
-        }
+    // private dealLoop = (first: boolean) => {
+    //     let dealSuccessfully: boolean = false;
+    //     for (let i = 0; this.getPlayerFlowOrder().length; i++) {
+    //         let p = this.getPlayerFlowOrder()[i].player!; //this.getPlayerFlowOrder ensures theres valid player
+    //         dealSuccessfully = this.dealHandCardsTo(p, first);
+    //         if (!dealSuccessfully) {
+    //             break;
+    //         }
+    //     }
 
-        if (!dealSuccessfully) {
-            return false;
-        }
+    //     if (!dealSuccessfully) {
+    //         return false;
+    //     }
 
-        //Deal dealer card, returns if dealer is successfully dealt a card or not
-        return this.dealHandCardsTo(this.getDealer(), first);
-    };
+    //     //Deal dealer card, returns if dealer is successfully dealt a card or not
+    //     return this.dealHandCardsTo(this.getDealer(), first);
+    // };
 
     //not in interface
-    private checkDealtCard = (card: Card | undefined, passFn: Function, failFn?: Function) => {
-        if (card) {
-            return passFn(card);
-        } else {
-            Notifier.error('Ran out of cards during game. Auto stopped');
-            if (failFn) {
-                return failFn();
-            }
-        }
-    };
+    // private checkDealtCard = (card: Card | undefined, passFn: Function, failFn?: Function) => {
+    //     if (card) {
+    //         return passFn(card);
+    //     } else {
+    //         Notifier.error('Ran out of cards during game. Auto stopped');
+    //         if (failFn) {
+    //             return failFn();
+    //         }
+    //     }
+    // };
 
     /**
      * Returns the entire flow order (including empty seats)
@@ -289,6 +310,13 @@ class GameController implements GameControlInterface {
     };
 
     /**
+     * Go to the next phase
+     */
+    goNextPhase = () => {
+        this.getPhaseCycle().next();
+    };
+
+    /**
      * Returns the phase cycle
      */
     getPhaseCycle = () => {
@@ -302,8 +330,22 @@ class GameController implements GameControlInterface {
         return this.getPhaseCycle().get();
     };
 
+    /**
+     * Begin round
+     */
+    beginRound = () => {};
+
     beginPhaseAction = () => {
         const phase = this.getCurrentPhase();
+        const phaseControl: PhaseControllerInterface = new PhaseActionController(phase).get();
+        phaseControl.action(this);
+    };
+
+    /**
+     * Callback that is triggered by inside PhaseControllerInterface.end fn (which is triggered by PhaseControllerInterface.action)
+     */
+    onPhaseEnd = () => {
+        this.getPhaseCycle().next();
     };
 
     /**
@@ -387,10 +429,18 @@ class GameController implements GameControlInterface {
         return this.dealtCards;
     };
 
+    /**
+     * Returns the game rules
+     * Game rule consists of game settings like min/max bet, max # of hands per player, rules for double down etc
+     */
     getRules = () => {
         return this.rule;
     };
 
+    /**
+     * Returns the config of the game
+     * This is for settings that are same for across games, like max table seating (hands), cut penetration, shuffle method, number of shuffles etc
+     */
     getConfig = () => {
         return this.config;
     };

@@ -77,11 +77,11 @@ class GameDelegator implements GameDelegatorInterface {
                     this.controller.addPlayer(player, position);
                     return true;
                 } else {
-                    Notifier.error(`Position ${pos} is already occupied!`);
+                    Notifier.warn(`Position ${pos} is already occupied!`);
                     return false;
                 }
             } else {
-                Notifier.error('There are no more open positions!');
+                Notifier.warn('There are no more open positions!');
                 return false;
             }
         }

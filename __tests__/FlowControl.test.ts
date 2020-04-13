@@ -4,6 +4,10 @@ import { GameActionPhase } from '~model/PhaseActionController';
 import { Shoe, CardCollectionInterface } from '~model/CardCollection';
 
 describe('Flow Control Tests', () => {
+    console.log = jest.fn();
+    console.warn = jest.fn();
+    console.error = jest.fn();
+
     let GID: string;
     let GC: GameController;
     let dummyDeck: CardCollectionInterface = new Shoe();

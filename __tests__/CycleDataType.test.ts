@@ -1,6 +1,10 @@
 import CycleDataType from '~model/CycleDataType';
 
 describe('CycleDataType Tests', () => {
+    console.log = jest.fn();
+    console.warn = jest.fn();
+    console.error = jest.fn();
+
     it('Can step forwards through a cycle', () => {
         const cycle = new CycleDataType(9, 8, 7);
         const actual = [

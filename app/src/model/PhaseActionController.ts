@@ -1,4 +1,4 @@
-import { GameDelegatorInterface } from './GameDelegator';
+import { GameControlInterface } from './GameController';
 
 export enum GameActionPhase {
     START, //new player can join if rules allow
@@ -13,9 +13,8 @@ export enum GameActionPhase {
 
 export interface PhaseControllerInterface {
     phase: GameActionPhase;
-    phaseEnded: boolean;
-    action: (gc: GameDelegatorInterface) => PhaseControllerInterface;
-    end: (gc: GameDelegatorInterface) => PhaseControllerInterface;
+    action: (gc: GameControlInterface) => void;
+    end: (gc: GameControlInterface) => void;
 }
 
 export class PhaseActionController {
@@ -53,104 +52,100 @@ export class PhaseActionController {
 
 export class StartPhaseController implements PhaseControllerInterface {
     public phase = GameActionPhase.START;
-    public phaseEnded = false;
 
-    action = (gc: GameDelegatorInterface) => {
-        return this;
+    action = (gc: GameControlInterface) => {
+        this.end(gc);
     };
 
-    end = (gc: GameDelegatorInterface) => {
-        return this;
+    end = (gc: GameControlInterface) => {
+        gc.onPhaseEnd();
     };
 }
 
 export class BetPhaseController implements PhaseControllerInterface {
     public phase = GameActionPhase.BET;
-    public phaseEnded = false;
 
-    action = (gc: GameDelegatorInterface) => {
-        return this;
+    action = (gc: GameControlInterface) => {
+        const playerFO = gc.getPlayerFlowOrder();
+        playerFO.forEach((pfo) => {
+            const player = pfo.player!;
+            if (!player.decide()) {
+                player.changeHandTo(0);
+                return;
+            }
+
+            //auto bet min amt and 1 hand for now
+            player.bet(gc.getRules().minBet, 1);
+        });
+        this.end(gc);
     };
 
-    end = (gc: GameDelegatorInterface) => {
-        return this;
+    end = (gc: GameControlInterface) => {
+        gc.onPhaseEnd();
     };
 }
 
 export class DealPhaseController implements PhaseControllerInterface {
     public phase = GameActionPhase.DEAL;
-    public phaseEnded = false;
 
-    action = (gc: GameDelegatorInterface) => {
-        return this;
+    action = (gc: GameControlInterface) => {
+        const playerFO = gc.getPlayerFlowOrder();
+        playerFO.forEach((pfo) => {
+            const player = pfo.player!;
+            player.getHands().forEach((hand) => hand.dealFirstCard(gc.takeCard()));
+        });
+        gc.getDealer().getCurrentHand().dealFirstCard(gc.takeCard());
+
+        playerFO.forEach((pfo) => {
+            const player = pfo.player!;
+            player.getHands().forEach((hand) => hand.dealSecondCard(gc.takeCard()));
+        });
+        gc.getDealer().getCurrentHand().dealSecondCard(gc.takeCard());
+        gc.getDealer().getCurrentHand().getSecondCard()!.show();
+        this.end(gc);
     };
 
-    end = (gc: GameDelegatorInterface) => {
-        return this;
+    end = (gc: GameControlInterface) => {
+        gc.onPhaseEnd();
     };
 }
 
 export class PlayPhaseController implements PhaseControllerInterface {
     public phase = GameActionPhase.PLAY;
-    public phaseEnded = false;
 
-    action = (gc: GameDelegatorInterface) => {
-        return this;
-    };
+    action = (gc: GameControlInterface) => {};
 
-    end = (gc: GameDelegatorInterface) => {
-        return this;
-    };
+    end = (gc: GameControlInterface) => {};
 }
 
 export class HousePhaseController implements PhaseControllerInterface {
     public phase = GameActionPhase.HOUSE;
-    public phaseEnded = false;
 
-    action = (gc: GameDelegatorInterface) => {
-        return this;
-    };
+    action = (gc: GameControlInterface) => {};
 
-    end = (gc: GameDelegatorInterface) => {
-        return this;
-    };
+    end = (gc: GameControlInterface) => {};
 }
 
 export class CheckPhaseController implements PhaseControllerInterface {
     public phase = GameActionPhase.CHECK;
-    public phaseEnded = false;
 
-    action = (gc: GameDelegatorInterface) => {
-        return this;
-    };
+    action = (gc: GameControlInterface) => {};
 
-    end = (gc: GameDelegatorInterface) => {
-        return this;
-    };
+    end = (gc: GameControlInterface) => {};
 }
 
 export class PayoutPhaseController implements PhaseControllerInterface {
     public phase = GameActionPhase.PAYOUT;
-    public phaseEnded = false;
 
-    action = (gc: GameDelegatorInterface) => {
-        return this;
-    };
+    action = (gc: GameControlInterface) => {};
 
-    end = (gc: GameDelegatorInterface) => {
-        return this;
-    };
+    end = (gc: GameControlInterface) => {};
 }
 
 export class EndPhaseController implements PhaseControllerInterface {
     public phase = GameActionPhase.END;
-    public phaseEnded = false;
 
-    action = (gc: GameDelegatorInterface) => {
-        return this;
-    };
+    action = (gc: GameControlInterface) => {};
 
-    end = (gc: GameDelegatorInterface) => {
-        return this;
-    };
+    end = (gc: GameControlInterface) => {};
 }

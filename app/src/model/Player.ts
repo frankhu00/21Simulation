@@ -17,6 +17,7 @@ export interface PlayerActionInterface {
 
 export interface PlayerInterface {
     active: boolean;
+    isSitOut: boolean;
     // numHands: number
     // hands: PlayingHand[]
     // currentHand: PlayingHand
@@ -25,6 +26,8 @@ export interface PlayerInterface {
     updateBankroll: (amount: number) => PlayerInterface;
     setBankroll: (to: number) => PlayerInterface;
     hasEnoughBankroll: (amount: number, useBankroll?: number) => boolean;
+
+    decide: () => boolean;
 
     canHit: () => boolean;
     canSplit: () => boolean;
@@ -39,6 +42,8 @@ export interface PlayerInterface {
     //this is finish current hand and move to next hand / player
     completeCurrentHand: () => void;
     // next: () => void
+
+    bet: (amt: number, hand: number) => PlayerInterface;
 
     changeBetBy: (chane: number) => PlayerInterface;
     changeBetTo: (setTo: number) => PlayerInterface;
@@ -55,6 +60,7 @@ export interface PlayerInterface {
     getTotalBetFromAllHands: () => number;
     setDelegator: (delegator: GameDelegatorInterface) => PlayerInterface;
     getPosition: () => number | null;
+    getHands: () => PlayingHand[];
     startHand: () => PlayerInterface;
     hasNextHand: () => boolean;
     toNextHand: () => PlayerInterface;
@@ -65,6 +71,7 @@ export interface PlayerInterface {
 //Whereas NPC/Player class can always follow a custom rule set later on...
 export default class Player implements PlayerInterface {
     public active: boolean;
+    public isSitOut: boolean = false;
     // private numHands: number
     private bankroll: number = 0;
     private currentHandIndex: number = 0;
@@ -98,6 +105,24 @@ export default class Player implements PlayerInterface {
         }
     }
 
+    /**
+     * Use to decide if the user will proceed with the round action
+     * Example. If the current round action is place a bet, returning true means the user will place a bet
+     */
+    decide = () => {
+        //This will contain logic to simulate user decision for npc players
+        return true;
+    };
+
+    /**
+     * create one or more hands with the bet amt
+     */
+    bet = (amt: number, hand: number = 1) => {
+        this.changeHandTo(hand);
+        this.getHands().forEach((hand) => hand.setBet(amt));
+        return this;
+    };
+
     startHand = () => {
         //Control logic
         return this;
@@ -110,7 +135,7 @@ export default class Player implements PlayerInterface {
 
     join = (game: GameDelegatorInterface, pos?: number) => {
         if (this.delegator) {
-            Notifier.error(`Player (${PlayerType[this.getType()]}) is already in a game!`);
+            Notifier.warn(`Player (${PlayerType[this.getType()]}) is already in a game!`);
             return false;
         }
 
@@ -312,7 +337,7 @@ export default class Player implements PlayerInterface {
 
     changeBetTo = (setTo: number) => {
         if (!this.delegator) {
-            Notifier.error('Player is not in a game, can not change bet');
+            Notifier.warn('Player is not in a game, can not change bet');
             return this;
         }
 
@@ -320,7 +345,7 @@ export default class Player implements PlayerInterface {
         // - means a decrease in bet amount -> always ok
         let changeInBet = setTo - this.getCurrentHand().getBet();
         if (changeInBet > 0 && !this.hasEnoughBankroll(changeInBet)) {
-            Notifier.error(`Player does NOT have sufficient bankroll.`);
+            Notifier.warn(`Player does NOT have sufficient bankroll.`);
             return this;
         }
 
@@ -331,14 +356,14 @@ export default class Player implements PlayerInterface {
             // Will need to take care of hasEnoughBankroll checks for auto betting
             //     Notifier.notify(`The minimum bet is ${min}! Auto bet to ${min}.`)
             //     setTo = min
-            Notifier.error(`The minimum bet is ${min}!`);
+            Notifier.warn(`The minimum bet is ${min}!`);
             return this;
         }
 
         if (setTo > max) {
             //     Notifier.notify(`The maximum bet is ${max}! Auto bet to ${max}.`)
             //     setTo = max
-            Notifier.error(`The maximum bet is ${max}!`);
+            Notifier.warn(`The maximum bet is ${max}!`);
             return this;
         }
 
@@ -349,15 +374,26 @@ export default class Player implements PlayerInterface {
         return this;
     };
 
+    /**
+     * Same as changeHandTo but relative
+     * I.E. originally have 2 hands. Calling changeHandBy(-1) means remove one hand so total hands become one
+     */
     changeHandBy = (change: number) => {
         return this.changeHandTo(this.hands.length + change);
     };
 
+    /**
+     * Changes number of player hand to #
+     * This will automatically set the hand to the min bet size
+     * If number of hand is set to 0, bet size is also removed
+     */
     changeHandTo = (setTo: number) => {
         if (!this.delegator) {
-            Notifier.error('Player is not in a game, can not change number of hands');
+            Notifier.warn('Player is not in a game, can not change number of hands');
             return this;
         }
+
+        this.isSitOut = setTo <= 0 ? true : false;
 
         const minBetPerHand = this.delegator.getMinBetForNumHands(setTo);
         const totalBankrollNeeded = minBetPerHand * setTo;
@@ -371,23 +407,23 @@ export default class Player implements PlayerInterface {
                     this.updateBankroll(-1 * extraBankrollNeeded);
                     this.hands = Array(setTo).fill(new Hand().setBet(minBetPerHand));
                 } else {
-                    Notifier.error(`Don't have enough bankroll to play ${setTo} hands!`);
+                    Notifier.warn(`Don't have enough bankroll to play ${setTo} hands!`);
                 }
             } else {
-                Notifier.error(
+                Notifier.warn(
                     `Can not set hands to ${setTo} due to max table size. The table has ${this.delegator.getOpenHands()} spot(s) left.`
                 );
             }
         }
         //For lowering hands case
         else if (setTo < this.numOfHands()) {
-            if (setTo > 0) {
+            if (setTo >= 0) {
                 //wont have not enough bet issue
                 const bankrollReturned = currentTotalBet - totalBankrollNeeded;
                 this.updateBankroll(bankrollReturned);
                 this.hands = Array(setTo).fill(new Hand().setBet(minBetPerHand));
             } else {
-                Notifier.error('Can not set hands to lower than 1');
+                Notifier.warn('Can not set hands to lower than 0');
             }
         }
         //For equal case, usually occurs when player join game
@@ -398,6 +434,13 @@ export default class Player implements PlayerInterface {
         }
 
         return this;
+    };
+
+    /**
+     * Returns all hands for this player
+     */
+    getHands: () => PlayingHand[] = () => {
+        return this.hands;
     };
 
     //This is strictly for split
@@ -428,10 +471,6 @@ export default class Player implements PlayerInterface {
 
     getCurrentHand = () => {
         return this.hands[this.currentHandIndex];
-    };
-
-    getHands = () => {
-        return this.hands;
     };
 
     hasNextHand = () => {

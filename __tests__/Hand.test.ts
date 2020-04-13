@@ -2,6 +2,10 @@ import Card from '~model/Card';
 import Hand from '~model/Hand';
 
 describe('Playing Hand Tests', () => {
+    console.log = jest.fn();
+    console.warn = jest.fn();
+    console.error = jest.fn();
+
     let CA = new Card('A');
     let C2 = new Card('2');
     let C3 = new Card('3');
