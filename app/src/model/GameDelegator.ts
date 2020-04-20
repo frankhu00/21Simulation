@@ -5,7 +5,7 @@ import { GameControlInterface } from './GameController';
 import Notifier from './Notifier';
 
 export interface GameDelegatorInterface {
-    next: (player: PlayerInterface) => any;
+    // next: (player: PlayerInterface) => any;
     register: (player: PlayerInterface, pos?: number) => boolean;
     unregister: (player: PlayerInterface) => boolean;
     getOpenHands: () => number;
@@ -14,7 +14,7 @@ export interface GameDelegatorInterface {
     getDealerShowingCard: () => Card | undefined;
     canDoubleDown: (withHand: PlayingHand) => boolean;
     canSplit: (withHand: PlayingHand) => boolean;
-    canInsurance: () => boolean;
+    // canInsurance: () => boolean;
     canSurrender: () => boolean;
     deal: () => Card | undefined;
     getMinBetForNumHands: (numHands: number) => number;
@@ -41,27 +41,27 @@ class GameDelegator implements GameDelegatorInterface {
         return dealtCard;
     }
 
-    next(player: PlayerInterface) {
-        //Signals from Player class to tell the GameController to move onto either:
-        // 1) next hand of the same Player
-        // 2) next Player
-        // 3) End round and begin calculating phase
-        // 4) Finish calculated results (payout or collect wins)
-        // 5) Wait for betSize / numHand changes from all players
-        // 6) Start a new round
-        // 7) End shoe and begin shuffle
-        // 8) Start shoe (put top card away and deal 1st round)
+    // next(player: PlayerInterface) {
+    //     //Signals from Player class to tell the GameController to move onto either:
+    //     // 1) next hand of the same Player
+    //     // 2) next Player
+    //     // 3) End round and begin calculating phase
+    //     // 4) Finish calculated results (payout or collect wins)
+    //     // 5) Wait for betSize / numHand changes from all players
+    //     // 6) Start a new round
+    //     // 7) End shoe and begin shuffle
+    //     // 8) Start shoe (put top card away and deal 1st round)
 
-        //Player needs to have position set to use as indicator ?
-        //Finish the flow control
-        const currentPos = player.getPosition();
-        if (player.hasNextHand()) {
-            player.toNextHand().startHand();
-        } else {
-        }
+    //     //Player needs to have position set to use as indicator ?
+    //     //Finish the flow control
+    //     const currentPos = player.getPosition();
+    //     if (player.hasNextHand()) {
+    //         player.toNextHand().startHand();
+    //     } else {
+    //     }
 
-        Notifier.notify('Delegation method called');
-    }
+    //     Notifier.notify('Delegation method called');
+    // }
 
     register(player: PlayerInterface, pos?: number) {
         if (player.getType() == PlayerType.Dealer) {
@@ -173,15 +173,16 @@ class GameDelegator implements GameDelegatorInterface {
         }
     };
 
-    canInsurance = () => {
-        const show = this.getDealerShowingCard();
-        if (show) {
-            return show.getKey() == 'A';
-        } else {
-            Notifier.error('Dealer has no cards.');
-            return false;
-        }
-    };
+    // dont need this here
+    // canInsurance = () => {
+    //     const show = this.getDealerShowingCard();
+    //     if (show) {
+    //         return show.getKey() == 'A';
+    //     } else {
+    //         Notifier.error('Dealer has no cards.');
+    //         return false;
+    //     }
+    // };
 
     canSurrender = () => {
         return this.controller.getRules().surrender;

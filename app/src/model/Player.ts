@@ -1,5 +1,6 @@
 import Hand, { PlayingHand } from './Hand';
 import { GameDelegatorInterface } from './GameDelegator';
+import Card from './Card';
 
 import Notifier from './Notifier';
 
@@ -9,10 +10,24 @@ export enum PlayerType {
     Dealer,
 }
 
+/**
+ * This doesn't include insurance since its a special flow
+ */
+export enum PlayActionName {
+    stand = 'Stand',
+    dd = 'Double Down',
+    split = 'Split',
+    surrender = 'Surrender',
+    hit = 'Hit',
+}
 export interface PlayerActionInterface {
     name: string;
     can: boolean;
     action: () => any;
+}
+
+export interface PlayerActionSelection {
+    [key: string]: PlayerActionInterface;
 }
 
 export interface PlayerInterface {
@@ -27,7 +42,17 @@ export interface PlayerInterface {
     setBankroll: (to: number) => PlayerInterface;
     hasEnoughBankroll: (amount: number, useBankroll?: number) => boolean;
 
-    decide: () => boolean;
+    decideBet: () => boolean;
+    // decideInsurance: () => boolean;
+    // decideEvenPay: () => void;
+
+    //used by PlayPhaseControll
+    takeInsuranceAction: () => PlayerInterface;
+    setDealerInsuranceBJPayoutModifier: () => PlayerInterface;
+    setLooseInsurancePayoutModifier: () => PlayerInterface;
+    playAction: (dealerShowCard: Card) => PlayerInterface;
+    getAvailablePlayActions: () => PlayerActionSelection;
+    getShowCard: () => Card; //for dealer...
 
     canHit: () => boolean;
     canSplit: () => boolean;
@@ -39,7 +64,6 @@ export interface PlayerInterface {
     insurance: () => PlayerInterface;
     surrender: () => PlayerInterface;
 
-    //this is finish current hand and move to next hand / player
     completeCurrentHand: () => void;
     // next: () => void
 
@@ -61,7 +85,7 @@ export interface PlayerInterface {
     setDelegator: (delegator: GameDelegatorInterface) => PlayerInterface;
     getPosition: () => number | null;
     getHands: () => PlayingHand[];
-    startHand: () => PlayerInterface;
+    resetHandOrder: () => PlayerInterface;
     hasNextHand: () => boolean;
     toNextHand: () => PlayerInterface;
 }
@@ -106,12 +130,55 @@ export default class Player implements PlayerInterface {
     }
 
     /**
-     * Use to decide if the user will proceed with the round action
-     * Example. If the current round action is place a bet, returning true means the user will place a bet
+     * Use to decide if the operator will proceed with the bet phase action
+     * Returning true means the user will place a bet
      */
-    decide = () => {
+    decideBet = () => {
         //This will contain logic to simulate user decision for npc players
         return true;
+    };
+
+    /**
+     * When dealer asks for insurance and player hand is BJ, ask for even pay option
+     */
+    decideEvenPay = () => {
+        const hand = this.getCurrentHand();
+        if (hand.isBlackJack) {
+            //make all true for now
+            hand.isEvenPay = true;
+            return true; //if hand is BJ, there is only even pay or normal flow, no insurance bets
+        } else {
+            hand.isEvenPay = false;
+            return false; //means no BJ, so you can take insurance
+        }
+    };
+
+    /**
+     * Use to decide if the operator will buy insurance ()
+     * Returning true means the user will place a bet
+     */
+    decideInsurance = () => {
+        if (this.canInsurance()) {
+            //run it based on value of the hand
+            //dummy logic for now: buy if value >= 19
+            const dummyLogic = this.getCurrentHand()
+                .getValue()
+                .filter((v) => v >= 19);
+            return dummyLogic.length > 0;
+        } else {
+            return false;
+        }
+    };
+
+    /**
+     * Cleans up all insurance related flags (including evenPay).
+     * This should be triggered in the PayoutPhase end function
+     */
+    clearInsuranceFlags = () => {
+        const action = () => {
+            this.getCurrentHand().clearInsuranceFlags();
+        };
+        this.applyActionToEachHand(action);
     };
 
     /**
@@ -123,8 +190,11 @@ export default class Player implements PlayerInterface {
         return this;
     };
 
-    startHand = () => {
-        //Control logic
+    /**
+     * This resets the player current hand to the first hand
+     */
+    resetHandOrder = () => {
+        this.currentHandIndex = 0;
         return this;
     };
 
@@ -153,11 +223,19 @@ export default class Player implements PlayerInterface {
         return this.bankroll;
     };
 
+    /**
+     * This updates the bankroll of the player (relative)
+     * @param {number} amount - updates the bankroll relatively by this amt
+     */
     updateBankroll = (amount: number) => {
         this.bankroll += amount;
         return this;
     };
 
+    /**
+     * This sets the bankroll of the player to an absolute value (absolute)
+     * @param {number} to - set absolutely the amt of the bankroll
+     */
     setBankroll = (to: number) => {
         this.bankroll = to;
         return this;
@@ -177,7 +255,10 @@ export default class Player implements PlayerInterface {
     //Requirements that all actions need to pass (only bankroll so far)
     //Bind this to action UI fn
     actionRequirements = (actionCheck: () => boolean) => {
-        if (this.hasEnoughBankroll(this.getCurrentHand().getBet())) {
+        const hand = this.getCurrentHand();
+        if (hand.isHandDone) {
+            return false;
+        } else if (this.hasEnoughBankroll(hand.getBet())) {
             return actionCheck();
         } else {
             return false;
@@ -207,6 +288,11 @@ export default class Player implements PlayerInterface {
     };
 
     canHit: () => boolean = () => {
+        const hand = this.getCurrentHand();
+        if (hand.isHandDone) {
+            return false;
+        }
+
         return !this.getCurrentHand().isBusted;
     };
 
@@ -226,7 +312,7 @@ export default class Player implements PlayerInterface {
 
     canInsurance: () => boolean = () => {
         if (this.delegator && this.hasEnoughBankroll(this.getCurrentHand().getBet() / 2)) {
-            return this.delegator.canInsurance();
+            return true;
         }
         return false;
     };
@@ -239,86 +325,227 @@ export default class Player implements PlayerInterface {
         return false;
     };
 
-    //This is more of an UI interface fn
-    action = () => {
-        const canPerform: PlayerActionInterface[] = [
+    /**
+     * Returns a PlayerActionSelection object with all the available actions for current hand and hand state
+     */
+    getAvailablePlayActions = () => {
+        let availableActions: PlayerActionSelection = {};
+        const allActions: PlayerActionInterface[] = [
             {
-                name: 'Stay',
+                name: PlayActionName.stand,
                 can: true,
                 action: this.completeCurrentHand,
             },
             {
-                name: 'Hit',
+                name: PlayActionName.hit,
                 can: this.canHit(),
                 action: this.hit,
             },
             {
-                name: 'Double Down',
+                name: PlayActionName.dd,
                 can: this.actionRequirements.call(this, this.canDoubleDown),
                 action: this.doubleDown,
             },
             {
-                name: 'Insurance',
-                can: this.actionRequirements.call(this, this.canInsurance),
-                action: this.insurance,
-            },
-            {
-                name: 'Split',
+                name: PlayActionName.split,
                 can: this.actionRequirements.call(this, this.canSplit),
                 action: this.split,
             },
             {
-                name: 'Surrender',
+                name: PlayActionName.surrender,
                 can: this.canSurrender(),
                 action: this.surrender,
             },
         ];
+
+        allActions
+            .filter((action) => action.can)
+            .forEach((availAction) => {
+                availableActions[availAction.name] = availAction;
+            });
+
+        return availableActions;
     };
 
     hit = () => {
-        if (this.canHit()) {
-            const card = this.delegator!.deal(); //bang operator should be fine...
-            if (card) {
-                this.getCurrentHand().hit(card);
-            }
+        const card = this.delegator!.deal(); //bang operator should be fine...
+        if (card) {
+            this.getCurrentHand().hit(card);
         }
         return this;
     };
 
+    /**
+     * Action call for doubleDown
+     */
     doubleDown = () => {
-        if (this.canDoubleDown()) {
-            const card = this.delegator!.deal(); //bang operator should be fine...
-            if (card) {
-                this.getCurrentHand().hit(card);
-                this.changeBetBy(this.getCurrentHand().getBet());
-                this.completeCurrentHand();
-            }
+        const card = this.delegator!.deal(); //bang operator should be fine...
+        if (card) {
+            this.getCurrentHand().hit(card);
+            this.changeBetBy(this.getCurrentHand().getBet()); //POST MVP : allow partial double downs
+            this.completeCurrentHand();
         }
         return this;
     };
 
+    /**
+     * @interface PlayerInterface
+     * Might need to spilt Dealer into its own interface
+     * This returns the faced up card of the Dealer hand
+     */
+    getShowCard = () => {
+        return this.getCurrentHand().getDealerShowCard();
+    };
+
+    /**
+     * @interface PlayerInterface
+     * This is called on play phase controller for insurance flow.
+     * This function will take care of the player's decision on each hand for insurance
+     */
+    takeInsuranceAction = () => {
+        const action = () => {
+            const isEvenPayFlow = this.decideEvenPay();
+            if (isEvenPayFlow) {
+                //hand is BJ -> even pay or normal flow, no insurance bets
+                return;
+            }
+
+            //Not BJ so can decide on insurance
+            if (this.decideInsurance()) {
+                this.insurance();
+            }
+        };
+        return this.applyActionToEachHand(action);
+    };
+
+    /**
+     * @interface PlayerInterface
+     * Call this when the dealer __HAVE__ the insurance BJ.
+     * Will handle setting flags for payout phase
+     */
+    setDealerInsuranceBJPayoutModifier = () => {
+        const action = () => {
+            const hand = this.getCurrentHand();
+            if (hand.isEvenPay) {
+                //isEvenPay = true automatically mean BJ is true
+                hand.insurancePayoutModifier = 1; //payout at 1:1, regular payout phase will pay zero due to game hadInsurance flag (BJ is a tie)
+                return;
+            }
+
+            if (hand.isInsured) {
+                hand.insurancePayoutModifier = 2; //payout double for insuredAmt, Regular payout phase will collect bet size (which makes it even)
+            } else {
+                hand.insurancePayoutModifier = 0; //not insured, do nothing for insurance. Regular payout phase will collect bet size
+            }
+        };
+
+        return this.applyActionToEachHand(action);
+    };
+
+    /**
+     * @interface PlayerInterface
+     * Call this when the dealer __DOES NOT__ have the insurance BJ
+     */
+    setLooseInsurancePayoutModifier = () => {
+        const action = () => {
+            this.getCurrentHand().insurancePayoutModifier = -1; //collect the insurance amt since dealer does not have BJ
+        };
+        return this.applyActionToEachHand(action);
+    };
+
+    /**
+     * @interface PlayerInterface
+     * Call this for PlayPhase normal flow (this is NOT for DEALER type)
+     * @param {Card} dealerShowCard - the value of the dealer show card
+     */
+    playAction = (dealerShowCard: Card) => {
+        const action = () => {
+            const hand = this.getCurrentHand();
+            while (!hand.isHandDone) {
+                const availActions = this.getAvailablePlayActions();
+                //simple logic for now
+                //stand if dealer is 4, 5, 6 face up
+                //hit until soft 17 or 17 and up
+                //unless it is 10 or 11 then do doubledown
+                const value = hand.getHighestValue();
+                try {
+                    if (dealerShowCard.isOneOf([4, 5, 6])) {
+                        if (availActions[PlayActionName.dd]) {
+                            //in case if they can't dd due to bankroll etc
+                            availActions[PlayActionName.dd].action();
+                        } else {
+                            availActions[PlayActionName.stand].action();
+                        }
+                    } else if (value >= 17) {
+                        availActions[PlayActionName.hit].action();
+                    } else if (value == 10 || value == 11) {
+                        if (availActions[PlayActionName.dd]) {
+                            //in case if they can't dd due to bankroll etc
+                            availActions[PlayActionName.dd].action();
+                        } else {
+                            availActions[PlayActionName.hit].action();
+                        }
+                    } else {
+                        availActions[PlayActionName.stand].action();
+                    }
+                } catch (e) {
+                    hand.isHandDone = true; //force stop
+                    Notifier.error(e); //this is a critical error
+                }
+            }
+        };
+
+        return this.applyActionToEachHand(action);
+    };
+
+    /**
+     * Function that will apply an action (fn) to each of the player's hand in order
+     * This will call resetHandOrder at the beginning of the fn and at the end of the fn
+     * @param {function} action - action function to call for each hand
+     */
+    applyActionToEachHand = (action: () => any) => {
+        this.resetHandOrder();
+        action();
+        while (this.hasNextHand()) {
+            this.toNextHand();
+            action();
+        }
+        this.resetHandOrder();
+        return this;
+    };
+
+    /**
+     * dont think I need this in interface
+     */
     insurance = () => {
         if (this.canInsurance()) {
-            this.getCurrentHand().isInsured = true;
-            //Need to set the amount...? or have a separate one? or just auto set 50% of bet amount?
+            //POST MVP - allow partial insurance (should be in buyInsurance call)
+            const insuredAmt = this.getCurrentHand().buyInsurance().getInsuredAmt();
+            this.updateBankroll(-1 * insuredAmt);
+        } else {
+            Notifier.warn('Can not insure this hand');
         }
         return this;
     };
 
+    /**
+     * THIS IS POST MVP
+     * DONT THINK I NEED THIS IN INTERFACE
+     */
     split = () => {
         return this;
     };
 
+    /**
+     * THIS IS POST MVP??
+     * DONT THINK I NEED THIS IN INTERFACE
+     */
     surrender = () => {
         return this;
     };
 
     completeCurrentHand: () => void = () => {
-        if (this.delegator) {
-            this.delegator.next(this);
-        } else {
-            Notifier.error('Player has not joined any game!');
-        }
+        this.getCurrentHand().stand();
     };
 
     betToMin = () => {

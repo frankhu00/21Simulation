@@ -33,6 +33,7 @@ export interface GameControlInterface {
     // readonly config: GameConfiguration
     delegator: GameDelegatorInterface;
     gid: string;
+    hadInsurance: boolean;
 
     //Table related
     getRules: () => PlayRuleOption;
@@ -76,6 +77,7 @@ export interface GameControlInterface {
  */
 class GameController implements GameControlInterface {
     public gid: string;
+    public hadInsurance = false;
     public delegator: GameDelegatorInterface = new GameDelegator(this);
     public phaseCycle: CycleDataType = new CycleDataType(
         GameActionPhase.START,

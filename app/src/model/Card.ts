@@ -78,6 +78,14 @@ class Card {
         this.isVisible = true;
         return this;
     }
+
+    /**
+     * Test if a given card is one of the search cards
+     * @param {any[]} keys - Card key values (toString is called so '4' and 4 is the same)
+     */
+    isOneOf(keys: any[]) {
+        return keys.filter((k: any) => k.toString() == this.getKey()).length > 0;
+    }
 }
 
 export { BJCardValueMap, CardNumberMap, SuitType };
