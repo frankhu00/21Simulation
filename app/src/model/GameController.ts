@@ -50,6 +50,7 @@ export interface GameControlInterface {
     removePlayer: (player: PlayerInterface) => void;
     getPlayers: () => PlayerInterface[];
     checkHandRestrictions: (players: PlayerInterface[]) => boolean;
+    isAllPlayerHandBusted: () => boolean;
 
     //Flow Control related
     isGameStarted: () => boolean;
@@ -61,7 +62,7 @@ export interface GameControlInterface {
     getPhaseCycle: () => CycleDataType;
     getCurrentPhase: () => GameActionPhase;
     phaseCycle: CycleDataType;
-    onPhaseEnd: () => void;
+    onPhaseEnd: (phase: GameActionPhase) => void;
 
     //Shoe related
     getShoe: () => CardCollectionInterface;
@@ -344,10 +345,19 @@ class GameController implements GameControlInterface {
     };
 
     /**
+     * @interface GameControlInterface
      * Callback that is triggered by inside PhaseControllerInterface.end fn (which is triggered by PhaseControllerInterface.action)
      */
-    onPhaseEnd = () => {
+    onPhaseEnd = (phase: GameActionPhase) => {
         this.getPhaseCycle().next();
+    };
+
+    /**
+     * @interface GameControlInterface
+     * Checks if all player hands are busted.
+     */
+    isAllPlayerHandBusted = () => {
+        return this.getPlayerFlowOrder().every((fo) => fo.player!.areAllHandsBusted());
     };
 
     /**

@@ -53,6 +53,8 @@ export interface PlayerInterface {
     playAction: (dealerShowCard: Card) => PlayerInterface;
     getAvailablePlayActions: () => PlayerActionSelection;
     getShowCard: () => Card; //for dealer...
+    dealerAction: () => PlayerInterface;
+    areAllHandsBusted: () => boolean;
 
     canHit: () => boolean;
     canSplit: () => boolean;
@@ -288,6 +290,7 @@ export default class Player implements PlayerInterface {
     };
 
     canHit: () => boolean = () => {
+        //Might need to check if theres anymore cards to hit
         const hand = this.getCurrentHand();
         if (hand.isHandDone) {
             return false;
@@ -496,6 +499,43 @@ export default class Player implements PlayerInterface {
         };
 
         return this.applyActionToEachHand(action);
+    };
+
+    /**
+     * @interface PlayerInterface
+     * Returns true if every hand busted
+     */
+    areAllHandsBusted = () => {
+        let allHandsBusted = true;
+        const action = () => {
+            const hand = this.getCurrentHand();
+            allHandsBusted = hand.isBusted;
+            if (!hand.isBusted) {
+                return;
+            }
+        };
+
+        this.applyActionToEachHand(action);
+        return allHandsBusted;
+    };
+
+    /**
+     * @interface PlayerInterface
+     * Used for dealers only. Will determine dealer play action based on game rules / configs
+     */
+    dealerAction = () => {
+        //all hand busted situtation checed at phase action controller
+
+        //For now just stand at soft/hard 17 or up
+        let dealerHandValue = this.getCurrentHand().getHighestValue();
+        while (dealerHandValue < 17) {
+            //Might need to check for bust or if theres anymore cards to hit
+            this.hit();
+            dealerHandValue = this.getCurrentHand().getHighestValue();
+        }
+        this.completeCurrentHand();
+
+        return this;
     };
 
     /**

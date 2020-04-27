@@ -60,7 +60,7 @@ export class StartPhaseController implements PhaseControllerInterface {
     };
 
     end = (gc: GameControlInterface) => {
-        gc.onPhaseEnd();
+        gc.onPhaseEnd(this.phase);
     };
 }
 
@@ -83,7 +83,7 @@ export class BetPhaseController implements PhaseControllerInterface {
     };
 
     end = (gc: GameControlInterface) => {
-        gc.onPhaseEnd();
+        gc.onPhaseEnd(this.phase);
     };
 }
 
@@ -118,7 +118,7 @@ export class DealPhaseController implements PhaseControllerInterface {
     };
 
     end = (gc: GameControlInterface) => {
-        gc.onPhaseEnd();
+        gc.onPhaseEnd(this.phase);
     };
 }
 
@@ -167,7 +167,7 @@ export class PlayPhaseController implements PhaseControllerInterface {
     };
 
     end = (gc: GameControlInterface) => {
-        gc.onPhaseEnd();
+        gc.onPhaseEnd(this.phase);
     };
 
     normalFlowAction = (gc: GameControlInterface) => {
@@ -186,10 +186,23 @@ export class HousePhaseController implements PhaseControllerInterface {
     public phase = GameActionPhase.HOUSE;
 
     action = (gc: GameControlInterface) => {
-        //check dealer stop condition
+        //dealer need a different type ...?
+
+        //If no player hands left (all busted), then just stand
+        const allBusted = gc.isAllPlayerHandBusted();
+        if (allBusted) {
+            gc.getDealer().completeCurrentHand();
+        } else {
+            //else do the dealer logic
+            gc.getDealer().dealerAction();
+        }
+
+        this.end(gc);
     };
 
-    end = (gc: GameControlInterface) => {};
+    end = (gc: GameControlInterface) => {
+        gc.onPhaseEnd(this.phase);
+    };
 }
 
 export class CheckPhaseController implements PhaseControllerInterface {
