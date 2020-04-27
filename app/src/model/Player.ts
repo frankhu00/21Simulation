@@ -477,16 +477,16 @@ export default class Player implements PlayerInterface {
                             availActions[PlayActionName.stand].action();
                         }
                     } else if (value >= 17) {
-                        availActions[PlayActionName.hit].action();
+                        availActions[PlayActionName.stand].action();
                     } else if (value == 10 || value == 11) {
                         if (availActions[PlayActionName.dd]) {
-                            //in case if they can't dd due to bankroll etc
+                            //in case if they can't dd due to bankroll or 3 card+ 10 / 11
                             availActions[PlayActionName.dd].action();
                         } else {
                             availActions[PlayActionName.hit].action();
                         }
                     } else {
-                        availActions[PlayActionName.stand].action();
+                        availActions[PlayActionName.hit].action();
                     }
                 } catch (e) {
                     hand.isHandDone = true; //force stop

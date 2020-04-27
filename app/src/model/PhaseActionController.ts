@@ -177,13 +177,17 @@ export class PlayPhaseController implements PhaseControllerInterface {
             //Not sure if this will have async issues
             player.playAction(gc.getDealer().getShowCard());
         });
+
+        this.end(gc);
     };
 }
 
 export class HousePhaseController implements PhaseControllerInterface {
     public phase = GameActionPhase.HOUSE;
 
-    action = (gc: GameControlInterface) => {};
+    action = (gc: GameControlInterface) => {
+        //check dealer stop condition
+    };
 
     end = (gc: GameControlInterface) => {};
 }
